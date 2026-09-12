@@ -1,0 +1,367 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  TrendingUp, 
+  Eye, 
+  FileText, 
+  BarChart2, 
+  Flame, 
+   
+  Search, 
+  Award, 
+   
+  Globe, 
+   
+  Activity,
+  Layers,
+  ChevronRight,
+  
+  Calendar,
+  Tag,
+  MapPin,
+  ArrowUpRight,
+  RefreshCw,
+  
+} from 'lucide-react';
+import { supabase } from '../../lib/supabase';
+import {  } from '../../lib/audit';
+import { ALL_PORTALS, getPortalById } from '../../lib/portals';
+import { User, Article } from './types';
+import AuditLogs from './AuditLogs';
+
+export default function AnalyticsManager({ currentUser }: { currentUser: User }) {
+  const [activeSubTab, setActiveSubTab] = useState<'website' | 'article'>('website');
+  const [selectedPortal, setSelectedPortal] = useState<string>('gnext');
+  const [articlePortalFilter, setArticlePortalFilter] = useState<string>('all');
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'views' | 'date' | 'title'>('views');
+
+  useEffect(() => {
+    loadArticles();
+  }, []);
+
+  const loadArticles = async () => {
+    setLoading(true);
+    try {
+      const { data } = await supabase
+        .from('articles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      const dbArticles: Article[] = (data || []).map((a: any) => ({
+        ...a,
+        categoryId: a.category_id || a.categoryId || 'cat-kreatif',
+        authorId: a.author_id || a.authorId || 'redaksi',
+        portal: a.portal || 'gnext',
+        views: a.views || 0,
+      }));
+
+      // Remove duplicate IDs just in case
+      const uniqueArticlesMap = new Map<string, Article>();
+      dbArticles.forEach(a => {
+        if (!uniqueArticlesMap.has(a.id)) {
+          uniqueArticlesMap.set(a.id, a);
+        }
+      });
+
+      setArticles(Array.from(uniqueArticlesMap.values()));
+    } catch (err) {
+      console.error('Failed to load articles for analytics:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper to extract first image
+  const extractFirstImage = (content?: string) => {
+    if (!content) return null;
+    const mdMatch = content.match(/!\[.*?\]\((.*?)\)/);
+    if (mdMatch && mdMatch[1]?.trim()) return mdMatch[1].trim();
+    const htmlMatch = content.match(/<img.*?src=["'](.*?)["']/);
+    if (htmlMatch && htmlMatch[1]?.trim()) return htmlMatch[1].trim();
+    return null;
+  };
+
+  const getArticleImg = (art?: Article) => {
+    if (!art) return 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&fit=crop';
+    if (art.cover_image && art.cover_image.trim()) return art.cover_image.trim();
+    const extracted = extractFirstImage(art.content);
+    if (extracted) return extracted;
+    return 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=600&fit=crop';
+  };
+
+  // Compute portal analytics stats
+  const getPortalStats = (portalId: string) => {
+    if (portalId === 'all') {
+      const totalViews = articles.reduce((acc, a) => acc + (a.views || 0), 0);
+      const totalArticles = articles.length;
+      return { totalViews, totalArticles, avgViews: totalArticles ? Math.round(totalViews / totalArticles) : 0, articlesList: articles };
+    }
+
+    const portalArticles = articles.filter(a => {
+      const p = (a.portal || 'gnext').toLowerCase();
+      if (portalId === 'lentera-all') return p.startsWith('lentera');
+      return p === portalId.toLowerCase();
+    });
+
+    const totalViews = portalArticles.reduce((acc, a) => acc + (a.views || 0), 0);
+    const totalArticles = portalArticles.length;
+    const avgViews = totalArticles > 0 ? Math.round(totalViews / totalArticles) : 0;
+
+    return { totalViews, totalArticles, avgViews, articlesList: portalArticles };
+  };
+
+  // Current selected portal stats
+  const currentStats = getPortalStats(articlePortalFilter);
+  const globalStats = getPortalStats('all');
+
+  // Filtered & sorted articles for selected portal
+  const getPortalArticlesFiltered = () => {
+    let filtered = articles.filter(a => {
+      const p = (a.portal || 'gnext').toLowerCase();
+      if (articlePortalFilter === 'all') return true;
+      if (articlePortalFilter === 'lentera-all') return p.startsWith('lentera');
+      return p === articlePortalFilter.toLowerCase();
+    });
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(a => 
+        a.title.toLowerCase().includes(q) || 
+        (a.news_location && a.news_location.toLowerCase().includes(q))
+      );
+    }
+
+    if (categoryFilter !== 'all') {
+      filtered = filtered.filter(a => a.categoryId === categoryFilter);
+    }
+
+    return filtered.sort((a, b) => {
+      if (sortBy === 'views') return (b.views || 0) - (a.views || 0);
+      if (sortBy === 'date') return new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime();
+      return a.title.localeCompare(b.title);
+    });
+  };
+
+  const currentArticlesList = getPortalArticlesFiltered();
+  const maxViewsInList = currentArticlesList.length > 0 ? Math.max(...currentArticlesList.map(a => a.views || 1)) : 1;
+
+  // Lentera sub-portals list
+  const lenteraPortals = ALL_PORTALS.filter(p => p.id.startsWith('lentera'));
+
+  return (
+    <div className="space-y-8 pb-12">
+      {/* Top Header & Navigation Tabs */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-neutral-200">
+        <div>
+          <div className="flex items-center gap-2.5 mb-1">
+            <span className="p-2 bg-neutral-900 text-white rounded-xl shadow-sm">
+              <BarChart2 size={22} />
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-neutral-900">
+              Analitik Trafik & Performa Portal
+            </h2>
+          </div>
+          <p className="text-xs sm:text-sm text-neutral-500">
+            Pantau statistik pembaca berita, performa artikel terpopuler, dan buat laporan langsung ke Audit Log.
+          </p>
+        </div>
+
+        {/* Tab Switcher: Website vs Article */}
+        <div className="flex items-center gap-2 bg-neutral-100 p-1 rounded-xl self-start md:self-auto border border-neutral-200/80">
+          <button
+            onClick={() => setActiveSubTab('website')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeSubTab === 'website'
+                ? 'bg-white text-neutral-900 shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900'
+            }`}
+          >
+            <Globe size={16} />
+            <span>Laporan Website</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('article')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
+              activeSubTab === 'article'
+                ? 'bg-white text-neutral-900 shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900'
+            }`}
+          >
+            <FileText size={16} />
+            <span>Laporan Artikel</span>
+          </button>
+        </div>
+      </div>
+
+      {activeSubTab === 'website' ? (
+        /* Main Analytics Dashboard */
+        <div className="space-y-8">
+          {/* 1. SELEKSI PORTAL & TRAFIK WEB CARDS */}
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-display font-bold text-neutral-900 flex items-center gap-2">
+                <Globe size={18} className="text-neutral-500" />
+                Pilih Trafik Web & Portal Media
+              </h3>
+              <span className="text-xs text-neutral-400 font-medium">Klik portal untuk melihat analitik detail</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Card 1: Gnext News (Nasional) */}
+              <button
+                onClick={() => setSelectedPortal('gnext')}
+                className={`p-5 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden flex flex-col justify-between ${
+                  selectedPortal === 'gnext'
+                    ? 'bg-red-900 text-white border-red-950 shadow-lg ring-2 ring-red-900/20'
+                    : 'bg-white text-neutral-900 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/80 shadow-sm'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`p-2 rounded-xl ${selectedPortal === 'gnext' ? 'bg-white/10 text-white' : 'bg-red-50 text-red-600'}`}>
+                      <Flame size={18} />
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                      selectedPortal === 'gnext' ? 'bg-white/20 text-white' : 'bg-red-50 text-red-600 border border-red-200'
+                    }`}>
+                      Portal Nasional
+                    </span>
+                  </div>
+                  <h4 className="font-display font-bold text-base leading-snug">GNEXT NEWS</h4>
+                  <p className={`text-xs mt-1 ${selectedPortal === 'gnext' ? 'text-neutral-200' : 'text-neutral-500'}`}>
+                    gnextindonesia.site/news
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-current/10">
+                  <div className="text-2xl font-display font-bold">
+                    {getPortalStats('gnext').totalViews.toLocaleString('id-ID')}
+                  </div>
+                  <div className={`text-[11px] font-medium mt-0.5 ${selectedPortal === 'gnext' ? 'text-neutral-200' : 'text-neutral-500'}`}>
+                    Total Pembaca Berita
+                  </div>
+                </div>
+              </button>
+
+              {/* Card 3: Yo Iki Jatim (Regional Jawa Timur) */}
+              <button
+                onClick={() => setSelectedPortal('yoikijatim')}
+                className={`p-5 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden flex flex-col justify-between ${
+                  selectedPortal === 'yoikijatim'
+                    ? 'bg-orange-600 text-white border-orange-700 shadow-lg ring-2 ring-orange-600/20'
+                    : 'bg-white text-neutral-900 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/80 shadow-sm'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`p-2 rounded-xl ${selectedPortal === 'yoikijatim' ? 'bg-white/10 text-white' : 'bg-orange-50 text-orange-600'}`}>
+                      <MapPin size={18} />
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                      selectedPortal === 'yoikijatim' ? 'bg-white/20 text-white' : 'bg-orange-50 text-orange-600 border border-orange-200'
+                    }`}>
+                      Jawa Timur
+                    </span>
+                  </div>
+                  <h4 className="font-display font-bold text-base leading-snug">YO IKI JATIM</h4>
+                  <p className={`text-xs mt-1 ${selectedPortal === 'yoikijatim' ? 'text-orange-100' : 'text-neutral-500'}`}>
+                    yoikijatim.gnextindonesia.site
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-current/10">
+                  <div className="text-2xl font-display font-bold">
+                    {getPortalStats('yoikijatim').totalViews.toLocaleString('id-ID')}
+                  </div>
+                  <div className={`text-[11px] font-medium mt-0.5 ${selectedPortal === 'yoikijatim' ? 'text-orange-100' : 'text-neutral-500'}`}>
+                    Total Pembaca Berita
+                  </div>
+                </div>
+              </button>
+
+              {/* Card 4: Lumajang Talks */}
+              <button
+                onClick={() => setSelectedPortal('lumajangtalks')}
+                className={`p-5 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden flex flex-col justify-between ${
+                  selectedPortal === 'lumajangtalks'
+                    ? 'bg-emerald-800 text-white border-emerald-900 shadow-lg ring-2 ring-emerald-800/20'
+                    : 'bg-white text-neutral-900 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/80 shadow-sm'
+                }`}
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className={`p-2 rounded-xl ${selectedPortal === 'lumajangtalks' ? 'bg-white/10 text-white' : 'bg-emerald-50 text-emerald-700'}`}>
+                      <MapPin size={18} />
+                    </span>
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                      selectedPortal === 'lumajangtalks' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}>
+                      Lumajang
+                    </span>
+                  </div>
+                  <h4 className="font-display font-bold text-base leading-snug">LUMAJANG TALKS</h4>
+                  <p className={`text-xs mt-1 ${selectedPortal === 'lumajangtalks' ? 'text-emerald-100' : 'text-neutral-500'}`}>
+                    lumajangtalks.gnextindonesia.site
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-current/10">
+                  <div className="text-2xl font-display font-bold">
+                    {getPortalStats('lumajangtalks').totalViews.toLocaleString('id-ID')}
+                  </div>
+                  <div className={`text-[11px] font-medium mt-0.5 ${selectedPortal === 'lumajangtalks' ? 'text-emerald-100' : 'text-neutral-500'}`}>
+                    Total Pembaca Berita
+                  </div>
+                </div>
+              </button>
+
+              {/* Lentera Network Portals */}
+              {lenteraPortals.map(portal => (
+                <button
+                  key={portal.id}
+                  onClick={() => setSelectedPortal(portal.id)}
+                  className={`p-5 rounded-2xl border text-left transition-all duration-300 relative overflow-hidden flex flex-col justify-between ${
+                    selectedPortal === portal.id
+                      ? 'bg-amber-800 text-white border-amber-900 shadow-lg ring-2 ring-amber-800/20'
+                      : 'bg-white text-neutral-900 border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/80 shadow-sm'
+                  }`}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`p-2 rounded-xl ${selectedPortal === portal.id ? 'bg-white/10 text-white' : 'bg-amber-50 text-amber-700'}`}>
+                        <Globe size={18} />
+                      </span>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                        selectedPortal === portal.id ? 'bg-white/20 text-white' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                      }`}>
+                        Jaringan Daerah
+                      </span>
+                    </div>
+                    <h4 className="font-display font-bold text-base leading-snug">{portal.name.toUpperCase()}</h4>
+                    <p className={`text-xs mt-1 ${selectedPortal === portal.id ? 'text-amber-100' : 'text-neutral-500'}`}>
+                      {portal.id}.gnextindonesia.site
+                    </p>
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-current/10">
+                    <div className="text-2xl font-display font-bold">
+                      {getPortalStats(portal.id).totalViews.toLocaleString('id-ID')}
+                    </div>
+                    <div className={`text-[11px] font-medium mt-0.5 ${selectedPortal === portal.id ? 'text-amber-100' : 'text-neutral-500'}`}>
+                      Total Pembaca Berita
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="py-12 text-center text-neutral-500 text-sm">Laporan artikel telah dihapus sesuai permintaan.</div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300..900;1,300..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+
+  --font-sans: 'Plus Jakarta Sans', Arial, Helvetica, sans-serif;
+  --font-display: 'Montserrat', 'Plus Jakarta Sans', Arial, Helvetica, sans-serif;
+  --font-serif: 'Merriweather', Georgia, serif;
+
+  --color-neutral-50: #F7F7F6;
+  --color-neutral-900: #0A0A0A;
+  --color-accent: #E1FF00; /* Vibrant creative yellow */
+  
+  /* Lumajang Talks Palette */
+  --color-lumajang-50: #fffceb;
+  --color-lumajang-100: #fff9d6;
+  --color-lumajang-200: #fff3ad;
+  --color-lumajang-300: #feea84;
+  --color-lumajang-400: #FDE600;
+  --color-lumajang-500: #E6D000;
+  --color-lumajang-600: #CCB800;
+  --color-lumajang-700: #998A00;
+  --color-lumajang-800: #665C00;
+  --color-lumajang-900: #1a1300;
+
+  /* Yo Iki Jatim Palette (#FF751F - Vibrant Jatim Orange) */
+  --color-yoiki-50: #fff7f0;
+  --color-yoiki-100: #ffede0;
+  --color-yoiki-200: #ffd6bd;
+  --color-yoiki-300: #ffb085;
+  --color-yoiki-400: #FF751F;
+  --color-yoiki-500: #e85c07;
+  --color-yoiki-600: #c44500;
+  --color-yoiki-700: #993300;
+  --color-yoiki-800: #662200;
+  --color-yoiki-900: #2b0d00;
+
+  /* Gnext Finance Palette (Biru Tua) */
+  --color-finance-50: #eff6ff;
+  --color-finance-100: #dbeafe;
+  --color-finance-200: #bfdbfe;
+  --color-finance-300: #93c5fd;
+  --color-finance-400: #60a5fa;
+  --color-finance-500: #3b82f6;
+  --color-finance-600: #2563eb;
+  --color-finance-700: #1d4ed8;
+  --color-finance-800: #1e40af;
+  --color-finance-900: #1e3a8a;
+}
+
+/* Enforce font-display: swap for custom web fonts to prevent layout shifts */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Merriweather';
+  font-display: swap;
+}
+
+@layer base {
+  html, body {
+    @apply bg-neutral-50 text-neutral-900 font-sans antialiased overflow-x-hidden;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+
+  img {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+.markdown-body img {
+  border-radius: 1rem;
+  max-width: 100%;
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  object-fit: contain;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: inline-block;
+  animation: marquee 130s linear infinite;
+}
+
+.animate-marquee-prayer {
+  display: inline-block;
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee:hover, .animate-marquee-prayer:hover {
+  animation-play-state: paused;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .font-calibri {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .font-arial {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}
