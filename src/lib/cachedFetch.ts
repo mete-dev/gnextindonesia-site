@@ -14,10 +14,10 @@ const CACHE_TTL = 300000; // 5 minutes cache for articles list
 const META_CACHE_TTL = 900000; // 15 minutes cache for categories/settings/users
 
 const STORAGE_KEYS = {
-  ARTICLES: 'gnext_cache_articles_v2',
-  CATEGORIES: 'gnext_cache_categories_v2',
-  SETTINGS: 'gnext_cache_settings_v2',
-  TIMESTAMP: 'gnext_cache_time_v2',
+  ARTICLES: 'gnext_cache_articles_v3',
+  CATEGORIES: 'gnext_cache_categories_v3',
+  SETTINGS: 'gnext_cache_settings_v3',
+  TIMESTAMP: 'gnext_cache_time_v3',
 };
 
 // Safe sessionStorage helpers
@@ -43,10 +43,13 @@ function setSessionStorage(key: string, data: any): void {
 export function clearArticlesCache() {
   cachedArticles = null;
   lastFetchTime = 0;
+  Object.keys(ARTICLE_DETAIL_CACHE).forEach(k => delete ARTICLE_DETAIL_CACHE[k]);
   if (typeof window !== 'undefined') {
     try {
       sessionStorage.removeItem(STORAGE_KEYS.ARTICLES);
       sessionStorage.removeItem(STORAGE_KEYS.TIMESTAMP);
+      sessionStorage.removeItem(STORAGE_KEYS.CATEGORIES);
+      sessionStorage.removeItem(STORAGE_KEYS.SETTINGS);
     } catch (e) {}
   }
 }
@@ -147,7 +150,7 @@ export async function fetchPublishedArticlesAndMetadata(forceRefresh: boolean = 
   const now = Date.now();
 
   // 1. Check in-memory cache
-  if (!forceRefresh && cachedArticles && (now - lastFetchTime < CACHE_TTL)) {
+  if (!forceRefresh && cachedArticles && cachedArticles.length > 0 && (now - lastFetchTime < CACHE_TTL)) {
     return {
       articles: cachedArticles,
       categories: cachedCategories || [],
@@ -162,7 +165,7 @@ export async function fetchPublishedArticlesAndMetadata(forceRefresh: boolean = 
     const storedCategories = getSessionStorage(STORAGE_KEYS.CATEGORIES);
     const storedSettings = getSessionStorage(STORAGE_KEYS.SETTINGS);
 
-    if (storedTime && storedArticles && (now - Number(storedTime) < CACHE_TTL)) {
+    if (storedTime && storedArticles && storedArticles.length > 0 && (now - Number(storedTime) < CACHE_TTL)) {
       cachedArticles = storedArticles;
       cachedCategories = storedCategories || [];
       cachedSettings = storedSettings || [];
@@ -176,36 +179,36 @@ export async function fetchPublishedArticlesAndMetadata(forceRefresh: boolean = 
   }
 
   try {
-    // 3. Selective query: DO NOT select * (omit heavy 'content' column)
+    // 3. Selective query: only valid columns that exist in DB
     const fetchPromise = Promise.all([
       supabase
         .from('articles')
-        .select('id, title, slug, category_id, author_id, status, date, cover_image, views, news_location, portal, sub_category, tags, created_at')
+        .select('id, title, category_id, author_id, status, date, cover_image, views, news_location, portal, sub_category, tags, created_at')
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(100),
       supabase
         .from('categories')
-        .select('id, name, slug, portal, description'),
+        .select('id, name, slug, parent_id, created_at'),
       supabase
         .from('web_settings')
-        .select('id, path, title, description')
+        .select('id, path, title, description, content')
     ]);
 
     const [articlesRes, categoriesRes, settingsRes] = await fetchPromise;
 
     let dbArticles: any[] = [];
     if (articlesRes && articlesRes.error) {
-      console.warn('Database fetch warning, using cache/fallback.', articlesRes.error);
+      console.warn('Database fetch warning, error was:', articlesRes.error);
       dbArticles = cachedArticles || DEFAULT_REAL_ARTICLES;
     } else {
-      dbArticles = articlesRes && articlesRes.data ? articlesRes.data : [];
+      dbArticles = articlesRes && articlesRes.data && articlesRes.data.length > 0 ? articlesRes.data : [];
       if (!dbArticles || dbArticles.length === 0) {
         dbArticles = DEFAULT_REAL_ARTICLES;
       }
     }
 
-    if (dbArticles) {
+    if (dbArticles && dbArticles.length > 0) {
       const valid = filterValidArticles(dbArticles).map((a: any) => ({
         ...a,
         categoryId: a.category_id || a.categoryId,
@@ -239,7 +242,7 @@ export async function fetchPublishedArticlesAndMetadata(forceRefresh: boolean = 
     }
   } catch (err) {
     console.warn('Network issue in cachedFetch:', err);
-    if (!cachedArticles) {
+    if (!cachedArticles || cachedArticles.length === 0) {
       cachedArticles = filterValidArticles(DEFAULT_REAL_ARTICLES);
     }
   }
@@ -272,7 +275,7 @@ export async function fetchArticleFullDetail(slugOrId: string): Promise<any | nu
     if (isUuid) {
       query = query.eq('id', slugOrId);
     } else {
-      query = query.or(`slug.eq.${slugOrId},id.eq.${slugOrId}`);
+      query = query.eq('id', slugOrId);
     }
 
     const { data, error } = await query.maybeSingle();
@@ -307,7 +310,7 @@ export async function fetchUsersCached(): Promise<any[]> {
   try {
     const { data, error } = await supabase
       .from('users')
-      .select('id, name, username, email, role, avatar_url, bio, instagram, phone, portal');
+      .select('id, name, username, email, role, portal, domisili, whatsapp, instagram_link, created_at');
     if (!error && data) {
       cachedUsers = data;
       return data;
