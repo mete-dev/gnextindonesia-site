@@ -1467,7 +1467,7 @@ async function startServer() {
     const viteModuleName = 'vite';
     const { createServer: createViteServer } = await import(viteModuleName);
     const vite = await createViteServer({
-      server: { middlewareMode: true, hmr: false },
+      server: { middlewareMode: true },
       appType: "custom",
     });
     app.use(vite.middlewares);

@@ -49,8 +49,9 @@ export default defineConfig(() => {
     },
     server: {
       allowedHosts: true as true,
-      hmr: false,
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      watch: {
+        ignored: ['**/odoo_addons/**', '**/.git/**', '**/dist/**'],
+      },
     },
   };
 });

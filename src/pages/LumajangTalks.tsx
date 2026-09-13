@@ -268,47 +268,13 @@ export default function LumajangTalksPage() {
         categories={locations}
         activeCategory={activeCategory}
         onSelectCategory={handleCategoryClick}
+        tickerArticles={articles.length > 0 ? getLatestTickerArticles(articles, 5) : []}
+        todayFormatted={todayFormatted}
+        getCategoryName={getCategoryTag}
+        getBasePath={getBasePath}
       />
 
-      <main className="pt-[108px] pb-20">
-
-        {/* TOP TICKER & BREAKING NEWS BANNER (LUMAJANG BRANDING) */}
-        <div className="w-full bg-neutral-950 text-white border-b border-lumajang-500/40 shadow-sm fixed top-16 left-0 right-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-11 overflow-hidden">
-            <div className="flex items-center gap-2 bg-lumajang-400 text-neutral-950 px-3 py-1 rounded text-xs font-black uppercase tracking-wider shrink-0 mr-3 animate-pulse">
-              <Radio size={14} className="animate-spin" />
-              <span className="hidden sm:inline">LUMAJANG TODAY</span>
-              <span className="sm:hidden">LUMAJANG TODAY</span>
-            </div>
-
-            <div className="hidden lg:flex items-center gap-1 text-xs text-neutral-300 border-r border-neutral-800 pr-4 mr-4 shrink-0 font-calibri">
-              <Clock size={12} className="text-lumajang-400" />
-              <span>{todayFormatted}</span>
-            </div>
-
-            <div className="flex-1 overflow-hidden relative text-xs font-medium text-neutral-200">
-              <div className="whitespace-nowrap inline-block animate-marquee">
-                {(articles.length > 0 ? (() => {
-                  const latest = getLatestTickerArticles(articles, 5);
-                  return [...latest, ...latest, ...latest, ...latest];
-                })() : []).map((a, i) => (
-                  <span key={`${a.id || 'art'}-${i}`} className="inline-flex items-center mx-6">
-                    <span className="text-lumajang-400 font-bold mr-2">
-                      [{getCategoryTag(a.categoryId)}]
-                    </span>
-                    <Link
-                      to={`${getBasePath()}/${slugify(getCategoryTag(a.categoryId))}/${slugify(a.title)}`}
-                      className="hover:text-lumajang-400 transition-colors"
-                    >
-                      {a.title}
-                    </Link>
-                    <span className="ml-6 text-neutral-700">•</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+      <main className="pt-28 pb-20">
 
 
 
@@ -326,35 +292,35 @@ export default function LumajangTalksPage() {
                   {/* LEFT PRIMARY BLOCK (8 Cols) */}
                   <div className="lg:col-span-8 flex flex-col gap-6">
                     
-                    {/* Big Hero Article Card (Split Left Text, Right Photo) */}
+                    {/* Compact Hero Article Card */}
                     <Link
                       to={`${getBasePath()}/${slugify(getCategoryTag(heroMain.categoryId))}/${slugify(heroMain.title)}`}
-                      className="group bg-white rounded-2xl border border-neutral-200/90 shadow-sm overflow-hidden flex flex-col md:flex-row h-auto md:min-h-[360px] hover:shadow-md hover:border-lumajang-400 transition-all duration-300"
+                      className="group bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/90 shadow-2xs hover:shadow-md hover:border-lumajang-400 transition-all duration-300 flex items-center justify-between gap-3 sm:gap-4"
                     >
                       {/* Left Side: Editorial Content */}
-                      <div className="flex-1 p-6 sm:p-8 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-4">
-                            <span className="px-2.5 py-0.5 rounded-md bg-lumajang-400 text-neutral-950 text-[10px] font-black uppercase tracking-wider shadow-sm">
+                      <div className="flex-1 flex flex-col justify-between min-w-0">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-lumajang-400 text-neutral-950 text-[10px] font-black uppercase tracking-wider shadow-xs">
                               KABAR LUMAJANG
                             </span>
-                            <span className="px-2.5 py-0.5 rounded-md bg-neutral-100 text-neutral-800 text-[10px] font-extrabold uppercase tracking-wider border border-neutral-200">
+                            <span className="px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 text-[10px] font-bold uppercase tracking-wider border border-neutral-200">
                               {getCategoryTag(heroMain.categoryId)}
                             </span>
                           </div>
                           
-                          <h2 className="text-2xl sm:text-3xl font-black text-neutral-900 leading-tight tracking-tight group-hover:text-lumajang-600 transition-colors duration-300">
+                          <h2 className="text-sm sm:text-base md:text-lg font-normal text-neutral-900 leading-snug tracking-tight group-hover:text-lumajang-600 transition-colors duration-200 line-clamp-2">
                             {heroMain.title}
                           </h2>
                           
-                          <p className="text-neutral-600 text-xs sm:text-sm mt-3.5 leading-relaxed line-clamp-3">
-                            {getCleanExcerpt(heroMain.content, 180)}
+                          <p className="text-neutral-500 text-xs leading-relaxed line-clamp-2 hidden sm:block">
+                            {getCleanExcerpt(heroMain.content, 110)}
                           </p>
                         </div>
                         
-                        <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
-                          <span className="font-extrabold uppercase tracking-wide text-lumajang-600 flex items-center gap-1">
-                            <MapPin size={13} />
+                        <div className="mt-2.5 pt-2 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
+                          <span className="font-semibold uppercase tracking-wide text-lumajang-600 flex items-center gap-1">
+                            <MapPin size={12} />
                             {heroMain.news_location || 'Lumajang'}
                           </span>
                           <span className="font-medium flex items-center gap-1 font-calibri">
@@ -364,26 +330,25 @@ export default function LumajangTalksPage() {
                         </div>
                       </div>
 
-                      {/* Right Side: Visual Cover */}
-                      <div className="w-full md:w-[45%] h-[240px] md:h-auto bg-neutral-900 relative shrink-0 overflow-hidden">
+                      {/* Right Side: Visual Cover (Controlled compact thumbnail) */}
+                      <div className="w-28 h-20 sm:w-36 sm:h-24 md:w-44 md:h-28 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative shadow-2xs">
                         <BlurImage
                           src={getArticleImage(heroMain)}
                           alt={heroMain.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none z-10" />
                       </div>
                     </Link>
 
                     {/* Secondary Horizontal Items Side-By-Side */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {heroSub.slice(0, 2).map((sub, idx) => (
                         <Link
                           key={sub.id || idx}
                           to={`${getBasePath()}/${slugify(getCategoryTag(sub.categoryId))}/${slugify(sub.title)}`}
-                          className="group bg-white p-4 rounded-xl border border-neutral-200 flex gap-4 hover:border-lumajang-400 hover:shadow-sm transition-all"
+                          className="group bg-white p-3 rounded-xl border border-neutral-200 flex gap-3 hover:border-lumajang-400 hover:shadow-2xs transition-all items-center"
                         >
-                          <div className="w-24 h-20 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative">
+                          <div className="w-20 h-16 sm:w-24 sm:h-18 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative">
                             <BlurImage
                               src={getArticleImage(sub)}
                               alt={sub.title}
@@ -392,14 +357,14 @@ export default function LumajangTalksPage() {
                           </div>
                           <div className="flex flex-col justify-between min-w-0 flex-1">
                             <div>
-                              <span className="text-[9px] font-black text-lumajang-600 uppercase tracking-widest block mb-0.5">
+                              <span className="text-[9px] font-bold text-lumajang-600 uppercase tracking-wider block mb-0.5">
                                 {getCategoryTag(sub.categoryId)}
                               </span>
-                              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-lumajang-600 transition-colors">
+                              <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-lumajang-600 transition-colors">
                                 {sub.title}
                               </h4>
                             </div>
-                            <span className="text-[10px] text-neutral-400 font-calibri flex items-center gap-1">
+                            <span className="text-[10px] text-neutral-400 font-calibri flex items-center gap-1 mt-1">
                               <MapPin size={10} className="text-lumajang-600" />
                               {sub.news_location || 'Lumajang'}
                             </span>
@@ -439,7 +404,7 @@ export default function LumajangTalksPage() {
                               <span className="text-[10px] font-bold text-lumajang-600 uppercase tracking-wider block mb-0.5">
                                 {getCategoryTag(pop.categoryId)}
                               </span>
-                              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-lumajang-600 transition-colors">
+                              <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-lumajang-600 transition-colors">
                                 {pop.title}
                               </h4>
                             </div>
@@ -470,7 +435,7 @@ export default function LumajangTalksPage() {
                           to={`${getBasePath()}/${slugify(getCategoryTag(art.categoryId))}/${slugify(art.title)}`}
                           className="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-neutral-200 hover:border-lumajang-400 transition-all shadow-2xs"
                         >
-                          <h4 className="text-sm sm:text-base font-extrabold text-neutral-900 leading-snug group-hover:text-lumajang-600 transition-colors line-clamp-2">
+                          <h4 className="text-sm sm:text-base font-normal text-neutral-900 leading-snug group-hover:text-lumajang-600 transition-colors line-clamp-2">
                             {art.title}
                           </h4>
                           <div className="flex items-center justify-between mt-1 text-[10px] text-neutral-400">
@@ -537,11 +502,11 @@ export default function LumajangTalksPage() {
                                     to={`${getBasePath()}/${slugify(getCategoryTag(focusArticle.categoryId))}/${slugify(focusArticle.title)}`}
                                     className="hover:text-neutral-800 transition-colors block text-neutral-950"
                                   >
-                                    <h4 className="text-xl sm:text-2xl font-black leading-tight mb-2 text-neutral-950">
+                                    <h4 className="text-xl sm:text-2xl font-normal leading-tight mb-2 text-neutral-950">
                                       {focusArticle.title}
                                     </h4>
                                   </Link>
-                                  <p className="text-[14px] text-neutral-800 leading-relaxed line-clamp-3">
+                                  <p className="text-[14px] text-neutral-800 leading-relaxed line-clamp-3 font-normal">
                                     {getCleanExcerpt(focusArticle.content, 160)}
                                   </p>
                                 </div>
@@ -557,7 +522,7 @@ export default function LumajangTalksPage() {
                                 <Link
                                   key={art.id || idx}
                                   to={`${getBasePath()}/${slugify(getCategoryTag(art.categoryId))}/${slugify(art.title)}`}
-                                  className="text-neutral-950 hover:text-neutral-800 transition-all font-semibold line-clamp-2 leading-snug border-l-2 border-neutral-950 pl-3.5"
+                                  className="text-neutral-950 hover:text-neutral-800 transition-all font-normal line-clamp-2 leading-snug border-l-2 border-neutral-950 pl-3.5"
                                 >
                                   {art.title}
                                 </Link>
@@ -688,7 +653,7 @@ export default function LumajangTalksPage() {
                                     to={`${getBasePath()}/${slugify(catName)}/${slugify(article.title)}`}
                                     className="block"
                                   >
-                                    <h4 className="text-base sm:text-xl font-bold text-neutral-900 leading-snug mb-2 group-hover:text-lumajang-600 transition-colors">
+                                    <h4 className="text-base sm:text-lg md:text-xl font-normal text-neutral-900 leading-snug mb-2 group-hover:text-lumajang-600 transition-colors">
                                       {article.title}
                                     </h4>
                                   </Link>
@@ -700,7 +665,7 @@ export default function LumajangTalksPage() {
                                   <div className="mt-auto flex items-center justify-between pt-2 border-t border-neutral-100">
                                     <Link
                                       to={`${getBasePath()}/${slugify(catName)}/${slugify(article.title)}`}
-                                      className="inline-flex items-center gap-1 text-xs font-bold text-lumajang-600 uppercase tracking-wider hover:underline"
+                                      className="inline-flex items-center gap-1 text-xs font-semibold text-lumajang-600 uppercase tracking-wider hover:underline"
                                     >
                                       <span>Baca Kabar Selengkapnya</span>
                                       <ChevronRight size={14} />
@@ -721,7 +686,7 @@ export default function LumajangTalksPage() {
                   {/* TERPOPULER RANKING CARD */}
                   <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm">
                     <div className="flex items-center justify-between border-b-2 border-lumajang-600 pb-3 mb-4 gap-2">
-                      <h3 className="text-base font-black uppercase tracking-tight text-neutral-900 flex items-center gap-2">
+                      <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-neutral-900 flex items-center gap-2">
                         <Flame size={18} className="text-lumajang-600" />
                         <span>KABAR POPULER MINGGUAN</span>
                       </h3>
@@ -746,7 +711,7 @@ export default function LumajangTalksPage() {
                             <span className="text-[10px] font-bold text-lumajang-600 uppercase tracking-wider block mb-0.5">
                               {getCategoryTag(pop.categoryId)}
                             </span>
-                            <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-lumajang-600 transition-colors">
+                            <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-lumajang-600 transition-colors">
                               {pop.title}
                             </h4>
                             <div className="flex items-center gap-3 text-[10px] text-neutral-400 mt-1 font-mono">

@@ -29,6 +29,7 @@ export default function NewsDetailPage() {
   const [article, setArticle] = useState<Article | null>(null);
   const [relatedArticles, setRelatedArticles] = useState<Article[]>([]);
   const [popularArticles, setPopularArticles] = useState<Article[]>([]);
+  const [tickerArticles, setTickerArticles] = useState<Article[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,13 +130,13 @@ export default function NewsDetailPage() {
       
       setCategories(dbCategories);
       setUsers(dbUsers);
-      
-      const allSearchArticles = filterValidArticles([...dbArticles, ...gummahFallbackArticles]).sort((a: any, b: any) => {
+      const allSearchArticles = filterValidArticles(dbArticles).sort((a: any, b: any) => {
         const timeA = parseArticleDate(a.date, a.created_at).getTime();
         const timeB = parseArticleDate(b.date, b.created_at).getTime();
         if (timeB !== timeA) return timeB - timeA;
         return ((b.views || 0) - (a.views || 0));
       });
+      setTickerArticles(allSearchArticles.slice(0, 10));
       
       const getCatName = (id: string) => {
         const foundCat = dbCategories.find((c: any) => c.id === id);
@@ -216,10 +217,10 @@ export default function NewsDetailPage() {
             .filter(w => w.length > 3 && !stopWords.has(w));
         };
 
-        const targetTags = getTagsArray(found);
-        const targetTitleWords = getTitleWords(found.title);
+        const targetTags = getTagsArray(finalArticle);
+        const targetTitleWords = getTitleWords(finalArticle.title);
 
-        let portalCandidates = filterValidArticles(allSearchArticles).filter(a => a.id !== found.id && a.status === 'published');
+        let portalCandidates = filterValidArticles(allSearchArticles).filter(a => a.id !== finalArticle.id && a.status === 'published');
         if (activePortal === 'yoikijatim') {
           portalCandidates = portalCandidates.filter(a => (a as any).portal === 'yoikijatim' || a.id.startsWith('yoiki-'));
         } else if (activePortal === 'lumajangtalks') {
@@ -233,7 +234,7 @@ export default function NewsDetailPage() {
         }
 
         if (portalCandidates.length < 5) {
-          portalCandidates = filterValidArticles(allSearchArticles).filter(a => a.id !== found.id && a.status === 'published');
+          portalCandidates = filterValidArticles(allSearchArticles).filter(a => a.id !== finalArticle.id && a.status === 'published');
         }
 
         // Score candidates based on hashtag overlap, title word similarity, and category match
@@ -257,7 +258,7 @@ export default function NewsDetailPage() {
           }
 
           // Category match (+10)
-          if (candidate.categoryId === found.categoryId || (candidate as any).category_id === found.category_id) {
+          if (candidate.categoryId === finalArticle.categoryId || (candidate as any).category_id === finalArticle.category_id) {
             score += 10;
           }
 
@@ -273,7 +274,7 @@ export default function NewsDetailPage() {
         });
 
         // Sort & calculate related and popular articles based on hashtag and title similarity
-        const similarityArticles = getRelatedArticlesBySimilarity(found, portalCandidates, 10);
+        const similarityArticles = getRelatedArticlesBySimilarity(finalArticle, portalCandidates, 10);
         setRelatedArticles(similarityArticles.slice(0, 5));
         
         // Popular sidebar in NewsDetail prioritizes hashtag and title similarity matching current article
@@ -451,6 +452,9 @@ export default function NewsDetailPage() {
           portal={activePortal} 
           categories={activePortal === 'gnext' && categoryNames.length > 1 ? categoryNames : undefined}
           onSelectCategory={(cat) => navigate(`/${activePortal === 'gnext' ? 'news' : activePortal}?category=${encodeURIComponent(cat)}`)}
+          tickerArticles={tickerArticles}
+          getCategoryName={getCategoryName}
+          getBasePath={() => routePrefix}
         />
         <ArticleDetailSkeleton portal={activePortal} />
       </div>
@@ -520,6 +524,9 @@ export default function NewsDetailPage() {
         portal={activePortal} 
         categories={activePortal === 'gnext' && categoryNames.length > 1 ? categoryNames : undefined}
         onSelectCategory={(cat) => navigate(`/${activePortal === 'gnext' ? 'news' : activePortal}?category=${encodeURIComponent(cat)}`)}
+        tickerArticles={tickerArticles}
+        getCategoryName={getCategoryName}
+        getBasePath={() => routePrefix}
       />
       
       <main className="pt-20 md:pt-28 pb-24 overflow-hidden relative z-10">
@@ -755,7 +762,7 @@ export default function NewsDetailPage() {
 
                         <Link 
                           to={relUrl}
-                          className={`text-base sm:text-lg font-bold hover:underline block leading-snug font-sans sm:font-display transition-colors ${
+                          className={`text-base sm:text-lg font-normal hover:underline block leading-snug font-sans sm:font-display transition-colors ${
                             isLentera 
                               ? 'text-[#8C4A21] hover:text-[#3D2314]' 
                               : isGummah 
@@ -1044,7 +1051,7 @@ export default function NewsDetailPage() {
 
                               {/* Title */}
                               <Link to={itemUrl}>
-                                <h4 className={`text-base sm:text-lg md:text-xl font-bold text-neutral-900 leading-snug line-clamp-2 transition-colors ${hoverTitleClass}`}>
+                                <h4 className={`text-base sm:text-lg md:text-xl font-normal text-neutral-900 leading-snug line-clamp-2 transition-colors ${hoverTitleClass}`}>
                                   {item.title}
                                 </h4>
                               </Link>
@@ -1096,11 +1103,6 @@ export default function NewsDetailPage() {
                         ? primaryColorClass 
                         : 'text-neutral-400';
 
-                      const rawViews = (item.views && item.views > 100) 
-                        ? item.views 
-                        : (16800 - index * 2450 + ((item.title.length * 89) % 950));
-                      const formattedViews = rawViews.toLocaleString('id-ID');
-
                       return (
                         <Link 
                           key={item.id || index}
@@ -1117,14 +1119,21 @@ export default function NewsDetailPage() {
                             <span className={`text-[10px] font-bold uppercase tracking-wider block mb-0.5 ${primaryColorClass}`}>
                               {catName}
                             </span>
-                            <h4 className={`text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 transition-colors ${hoverTitleClass}`}>
+                            <h4 className={`text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 transition-colors ${hoverTitleClass}`}>
                               {item.title}
                             </h4>
                             <div className="flex items-center gap-3 text-[10px] text-neutral-400 mt-1 font-mono">
-                              <span className="flex items-center gap-1">
-                                <Eye size={11} />
-                                {formattedViews} pembaca
-                              </span>
+                              {typeof item.views === 'number' && item.views > 0 ? (
+                                <span className="flex items-center gap-1">
+                                  <Eye size={11} />
+                                  {item.views.toLocaleString('id-ID')} pembaca
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-1">
+                                  <Clock size={11} />
+                                  {formatPublishDateTime(item.date, (item as any).created_at)}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </Link>

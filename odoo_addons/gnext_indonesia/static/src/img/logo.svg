@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" fill="#FFFFFF"/>
+  <g transform="translate(48, 225)">
+    <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="94" letter-spacing="-3" fill="#000000">GNEXT</text>
+    <text x="0" y="98" font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif" font-weight="900" font-size="80" letter-spacing="-3" fill="#000000">INDONESIA</text>
+  </g>
+</svg>

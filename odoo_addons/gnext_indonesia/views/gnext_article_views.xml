@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_gnext_article_tree" model="ir.ui.view">
+        <field name="name">gnext.article.tree</field>
+        <field name="model">gnext.article</field>
+        <field name="arch" type="xml">
+            <tree string="Daftar Artikel &amp; Berita" decoration-info="status == 'draft'" decoration-success="status == 'published'" decoration-muted="status == 'archived'">
+                <field name="title"/>
+                <field name="portal" widget="badge"/>
+                <field name="category_id"/>
+                <field name="author_id"/>
+                <field name="date"/>
+                <field name="views"/>
+                <field name="status" widget="badge" decoration-success="status == 'published'" decoration-warning="status == 'draft'"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_gnext_article_form" model="ir.ui.view">
+        <field name="name">gnext.article.form</field>
+        <field name="model">gnext.article</field>
+        <field name="arch" type="xml">
+            <form string="Artikel &amp; Berita">
+                <header>
+                    <button name="action_publish" string="Terbitkan (Publish)" type="object" class="oe_highlight" invisible="status == 'published'"/>
+                    <button name="action_draft" string="Kembalikan ke Draft" type="object" invisible="status == 'draft'"/>
+                    <button name="action_archive" string="Arsipkan" type="object" invisible="status == 'archived'"/>
+                    <field name="status" widget="statusbar" statusbar_visible="draft,published,archived"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="title" string="Judul Berita / Artikel"/>
+                        <h1><field name="title" placeholder="Ketikkan judul artikel yang memikat..."/></h1>
+                    </div>
+                    <group>
+                        <group string="Informasi Portal &amp; Kategori">
+                            <field name="portal"/>
+                            <field name="category_id"/>
+                            <field name="sub_category"/>
+                            <field name="news_location"/>
+                        </group>
+                        <group string="Penerbitan">
+                            <field name="author_id"/>
+                            <field name="date"/>
+                            <field name="tags" placeholder="e.g. teknologi, ai, startup"/>
+                            <field name="views"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Konten Utama" name="content">
+                            <field name="content" options="{'collaborative': true, 'resizable': true}"/>
+                        </page>
+                        <page string="Cover &amp; Media" name="media">
+                            <group>
+                                <group>
+                                    <field name="cover_image" placeholder="https://..."/>
+                                    <field name="cover_binary" widget="image"/>
+                                </group>
+                                <group>
+                                    <field name="image_caption"/>
+                                    <field name="image_credit"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="SEO &amp; Open Graph" name="seo">
+                            <group>
+                                <field name="og_title"/>
+                                <field name="og_description"/>
+                                <field name="og_image"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_gnext_article_search" model="ir.ui.view">
+        <field name="name">gnext.article.search</field>
+        <field name="model">gnext.article</field>
+        <field name="arch" type="xml">
+            <search string="Cari Artikel">
+                <field name="title"/>
+                <field name="tags"/>
+                <field name="author_id"/>
+                <field name="category_id"/>
+                <filter string="Gnext Utama" name="portal_gnext" domain="[('portal', '=', 'gnext')]"/>
+                <filter string="Yoiki Jatim" name="portal_yoikijatim" domain="[('portal', '=', 'yoikijatim')]"/>
+                <filter string="Lumajang Talks" name="portal_lumajangtalks" domain="[('portal', '=', 'lumajangtalks')]"/>
+                <separator/>
+                <filter string="Published" name="published" domain="[('status', '=', 'published')]"/>
+                <filter string="Draft" name="draft" domain="[('status', '=', 'draft')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Portal" name="groupby_portal" context="{'group_by': 'portal'}"/>
+                    <filter string="Kategori" name="groupby_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Status" name="groupby_status" context="{'group_by': 'status'}"/>
+                    <filter string="Penulis" name="groupby_author" context="{'group_by': 'author_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_gnext_article" model="ir.actions.act_window">
+        <field name="name">Artikel Berita</field>
+        <field name="res_model">gnext.article</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_gnext_article_search"/>
+        <field name="context">{'search_default_published': 1}</field>
+    </record>
+</odoo>

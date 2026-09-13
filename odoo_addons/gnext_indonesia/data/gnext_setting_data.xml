@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="setting_home" model="gnext.web.setting">
+            <field name="path">/</field>
+            <field name="title">Home | Gnext Creative Studio</field>
+            <field name="description">Ruang tumbuh bagi kreator muda.</field>
+            <field name="portal_id">gnext</field>
+        </record>
+        <record id="setting_about" model="gnext.web.setting">
+            <field name="path">/about</field>
+            <field name="title">About Us | Gnext</field>
+            <field name="description">Tentang Gnext Indonesia.</field>
+            <field name="portal_id">gnext</field>
+        </record>
+        <record id="setting_work" model="gnext.web.setting">
+            <field name="path">/work</field>
+            <field name="title">Our Work | Gnext</field>
+            <field name="description">Layanan dan portofolio kami.</field>
+            <field name="portal_id">gnext</field>
+        </record>
+        <record id="setting_yoiki_locs" model="gnext.web.setting">
+            <field name="path">yoikijatim-locations</field>
+            <field name="title">Kategori Lokasi Yoiki Jatim</field>
+            <field name="description">Daftar wilayah Jawa Timur</field>
+            <field name="content">Surabaya, Malang, Banyuwangi, Jember, Kediri, Sidoarjo, Gresik, Probolinggo, Pasuruan, Tuban, Madiun, Blitar</field>
+            <field name="portal_id">yoikijatim</field>
+        </record>
+        <record id="setting_lumajang_locs" model="gnext.web.setting">
+            <field name="path">lumajangtalks-locations</field>
+            <field name="title">Kategori Lokasi Lumajang Talks</field>
+            <field name="description">Daftar wilayah Kabupaten Lumajang</field>
+            <field name="content">Senduro, Pasrujambe, Klakah, Pronojiwo, Yosowilangun, Tempeh, Pasirian, Candipuro, Ranuyoso, Rowokangkung, Kunir, Tekung</field>
+            <field name="portal_id">lumajangtalks</field>
+        </record>
+    </data>
+</odoo>

@@ -11,7 +11,8 @@ import {
   List, Heading1, Heading2, ListOrdered, Image, Archive, Eye, 
   Check, Clock, MapPin, ExternalLink, Filter, ArrowLeft, Camera, FileText,
   Share2, Globe, MessageCircle, Sparkles, Tag, Video, Table, Quote, Undo2, Redo2, RotateCcw,
-  AlignLeft, AlignCenter, AlignRight, AlignJustify, Database, Download
+  AlignLeft, AlignCenter, AlignRight, AlignJustify, Database, Download,
+  Loader2, CheckCircle2, AlertCircle, AlertTriangle
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { clearArticlesCache } from '../../lib/cachedFetch';
@@ -111,6 +112,40 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
   const [showLocDropdown, setShowLocDropdown] = useState(false);
   const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+
+  // Performance & Custom Toast/Confirm Modal States
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveTargetStatus, setSaveTargetStatus] = useState<'draft' | 'published' | null>(null);
+
+  const [toast, setToast] = useState<{
+    id: number;
+    message: string;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title?: string;
+  } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success', title?: string) => {
+    setToast({ id: Date.now(), message, type, title });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText: string;
+    cancelText?: string;
+    type?: 'danger' | 'warning' | 'info';
+    onConfirm: () => void;
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contentEditableRef = useRef<HTMLDivElement>(null);
 
@@ -648,16 +683,18 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
   };
 
   const handleSave = async (targetStatus: 'draft' | 'published' | 'archived' = 'draft') => {
+    if (isSaving) return;
+
     const title = currentArticle.title?.trim();
     const categoryId = currentArticle.categoryId || currentArticle.category_id;
 
     if (!title || !categoryId) {
-      alert('Judul dan kategori tidak boleh kosong.');
+      showToast('Judul dan kategori tidak boleh kosong.', 'warning', 'Form Belum Lengkap');
       return;
     }
     
     if (!currentArticle.cover_image) {
-      alert('Mohon unggah foto berita.');
+      showToast('Mohon unggah foto berita terlebih dahulu.', 'warning', 'Foto Sampul Wajib');
       return;
     }
     
@@ -668,11 +705,14 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
              a.status === 'published'
       );
       if (isDuplicate) {
-        alert('Gagal menerbitkan: Artikel dengan judul yang sama persis sudah diterbitkan.');
+        showToast('Artikel dengan judul yang sama persis sudah diterbitkan.', 'error', 'Gagal Menerbitkan');
         return;
       }
     }
     
+    setIsSaving(true);
+    setSaveTargetStatus(targetStatus === 'published' ? 'published' : 'draft');
+
     try {
       const articlePortal = currentUser.role === 'Administrator'
         ? (currentArticle.portal || 'gnext')
@@ -688,7 +728,9 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
       );
 
       if (!subCatValidation.isValid) {
-        alert(subCatValidation.message || 'Mohon pilih sub-kategori yang sesuai.');
+        showToast(subCatValidation.message || 'Mohon pilih sub-kategori yang sesuai.', 'warning', 'Sub-Kategori Kurang Tepat');
+        setIsSaving(false);
+        setSaveTargetStatus(null);
         return;
       }
 
@@ -725,49 +767,42 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
       const action = (currentArticle.id && !isStaticOrFallbackId) ? 'update' : 'insert';
       const targetId = currentArticle.id && !isStaticOrFallbackId ? String(currentArticle.id) : undefined;
 
+      // 1. Fast Primary Save to Database
       const saveResult = await executeSaveWithFallback(action, articleData, targetId);
 
       if (!saveResult.success) {
         console.error('Supabase save error:', saveResult.error);
-        alert(`Gagal menyimpan artikel: ${saveResult.error?.message || 'Terjadi kesalahan pada database.'}`);
+        showToast(`Gagal menyimpan artikel: ${saveResult.error?.message || 'Terjadi kesalahan pada database.'}`, 'error', 'Penyimpanan Gagal');
+        setIsSaving(false);
+        setSaveTargetStatus(null);
         return;
       }
 
-      if (action === 'update') {
-        await logAudit(currentUser.name, 'UPDATE', 'Article', `Updated article: ${title} (${targetStatus}) on portal ${articlePortal}`);
-      } else {
-        await logAudit(currentUser.name, 'CREATE', 'Article', `Created article: ${title} (${targetStatus}) on portal ${articlePortal}`);
-      }
-      
-      // Trigger sitemap generation and Google Indexing API if published
-      if (targetStatus === 'published') {
+      // 2. Non-blocking Async Background Tasks (Audit, Sitemap update, Indexing API)
+      (async () => {
         try {
-          await fetch('/api/update-sitemap', { method: 'POST' });
-        } catch (err) {
-          console.error('Failed to trigger sitemap update', err);
-        }
-
-        try {
-          const indexRes = await fetch('/api/indexing/publish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title,
-              portal: articlePortal,
-              categoryId
-            })
-          });
-          const indexData = await indexRes.json();
-          if (indexData.success) {
-            console.log('[Google Indexing] Submission successful:', indexData);
+          if (action === 'update') {
+            logAudit(currentUser.name, 'UPDATE', 'Article', `Updated article: ${title} (${targetStatus}) on portal ${articlePortal}`);
           } else {
-            console.warn('[Google Indexing] Submission failed:', indexData.error);
+            logAudit(currentUser.name, 'CREATE', 'Article', `Created article: ${title} (${targetStatus}) on portal ${articlePortal}`);
+          }
+
+          if (targetStatus === 'published') {
+            fetch('/api/update-sitemap', { method: 'POST' }).catch(err => console.error('[Sitemap] Background update error:', err));
+            fetch('/api/indexing/publish', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, portal: articlePortal, categoryId })
+            }).then(r => r.json()).then(data => {
+              if (data.success) console.log('[Google Indexing] Background submission success:', data);
+            }).catch(err => console.error('[Google Indexing] Background error:', err));
           }
         } catch (err) {
-          console.error('Failed to trigger Google Indexing API', err);
+          console.error('Background task error:', err);
         }
-      }
-      
+      })();
+
+      // 3. Clear draft and reset state instantly
       try { localStorage.removeItem('article_draft'); } catch (e) {};
       setHasSavedDraft(false);
       setDraftTime(null);
@@ -776,45 +811,80 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
       setIsEditing(false);
       setCurrentArticle({});
       setLastSaved(null);
-      alert(targetStatus === 'published' ? 'Berita berhasil diterbitkan!' : 'Draft berita berhasil disimpan!');
+
+      // 4. Show sleek modern Toast notification
+      showToast(
+        targetStatus === 'published' 
+          ? 'Berita berhasil dipublikasikan! Sitemap & indeks Google otomatis diperbarui di latar belakang.' 
+          : 'Draf berita berhasil disimpan!',
+        'success',
+        targetStatus === 'published' ? 'Berita Berhasil Diterbitkan 🎉' : 'Draf Disimpan'
+      );
     } catch (error: any) {
       console.error('Failed to save article:', error);
-      alert(`Gagal menyimpan artikel: ${error?.message || 'Pastikan koneksi jaringan stabil.'}`);
+      showToast(`Gagal menyimpan artikel: ${error?.message || 'Pastikan koneksi jaringan stabil.'}`, 'error', 'Terjadi Kesalahan');
+    } finally {
+      setIsSaving(false);
+      setSaveTargetStatus(null);
     }
   };
 
-  const handleDelete = async (id: string, title?: string) => {
-    if (confirm('Yakin ingin menghapus artikel ini?')) {
-      try {
-        const { error } = await supabase.from('articles').delete().eq('id', id);
-        if (error) {
-          alert(`Gagal menghapus artikel: ${error.message}`);
-          return;
+  const handleDelete = (id: string, title?: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Hapus Artikel Berita?',
+      message: `Apakah Anda yakin ingin menghapus artikel "${title || 'ini'}"? Tindakan ini bersifat permanen.`,
+      confirmText: 'Ya, Hapus Artikel',
+      cancelText: 'Batal',
+      type: 'danger',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('articles').delete().eq('id', id);
+          if (error) {
+            showToast(`Gagal menghapus artikel: ${error.message}`, 'error', 'Gagal Menghapus');
+            return;
+          }
+          clearArticlesCache();
+          logAudit(currentUser.name, 'DELETE', 'Article', `Deleted article: ${title || id}`);
+          setArticles(prev => prev.filter(a => a.id !== id));
+          showToast('Artikel berita telah berhasil dihapus.', 'success', 'Artikel Dihapus');
+        } catch (error) {
+          console.error('Failed to delete article:', error);
+          showToast('Terjadi kesalahan saat menghapus artikel.', 'error');
+        } finally {
+          setConfirmModal(null);
         }
-        clearArticlesCache();
-        await logAudit(currentUser.name, 'DELETE', 'Article', `Deleted article: ${title || id}`);
-        setArticles(articles.filter(a => a.id !== id));
-      } catch (error) {
-        console.error('Failed to delete article:', error);
       }
-    }
+    });
   };
 
-  const handleArchive = async (id: string, title?: string) => {
-    if (confirm('Yakin ingin mengarsipkan artikel ini? (Hanya tampil di data, non-publik)')) {
-      try {
-        const { error } = await supabase.from('articles').update({ status: 'archived' }).eq('id', id);
-        if (error) {
-          alert(`Gagal mengarsipkan artikel: ${error.message}`);
-          return;
+  const handleArchive = (id: string, title?: string) => {
+    setConfirmModal({
+      isOpen: true,
+      title: 'Arsipkan Artikel Berita?',
+      message: `Artikel "${title || 'ini'}" akan diarsipkan dan tidak lagi ditampilkan di portal publik.`,
+      confirmText: 'Arsipkan Artikel',
+      cancelText: 'Batal',
+      type: 'warning',
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase.from('articles').update({ status: 'archived' }).eq('id', id);
+          if (error) {
+            showToast(`Gagal mengarsipkan artikel: ${error.message}`, 'error', 'Gagal Mengarsipkan');
+            return;
+          }
+          clearArticlesCache();
+          logAudit(currentUser.name, 'UPDATE', 'Article', `Archived article: ${title || id}`);
+          setArticles(prev => prev.map(a => a.id === id ? { ...a, status: 'archived' } : a));
+          showToast('Artikel berhasil diarsipkan.', 'success', 'Artikel Diarsipkan');
+        } catch (error) {
+          console.error('Failed to archive article:', error);
+          showToast('Terjadi kesalahan saat mengarsipkan artikel.', 'error');
+        } finally {
+          setConfirmModal(null);
         }
-        clearArticlesCache();
-        await logAudit(currentUser.name, 'UPDATE', 'Article', `Archived article: ${title || id}`);
-        setArticles(articles.map(a => a.id === id ? { ...a, status: 'archived' } : a));
-      } catch (error) {
-        console.error('Failed to archive article:', error);
       }
-    }
+    });
   };
 
   const formatDateDisplay = (dateStr?: string, createdAtStr?: string) => {
@@ -1199,26 +1269,38 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
       bodySeoStatus = { label: 'Artikel Mendalam (>800 kata)', color: 'bg-purple-100 text-purple-800 border-purple-200' };
     }
 
+    // Calculate live SEO health score (0 - 100%)
+    let seoScore = 0;
+    if (titleCharCount >= 30 && titleCharCount <= 70) seoScore += 30;
+    else if (titleCharCount > 0) seoScore += 15;
+
+    if (bodyWordCount >= 300) seoScore += 40;
+    else if (bodyWordCount >= 150) seoScore += 25;
+    else if (bodyWordCount > 0) seoScore += 10;
+
+    if (currentArticle.cover_image) seoScore += 20;
+    if (currentArticle.tags && currentArticle.tags.length > 0) seoScore += 10;
+
     return (
-      <div className="max-w-7xl mx-auto bg-gradient-to-b from-white via-white to-neutral-50/40 rounded-3xl border border-neutral-200/90 p-5 sm:p-8 md:p-10 mb-28 md:mb-16 relative shadow-xl space-y-8 animate-in fade-in duration-300">
-        {/* Editor Top Bar */}
-        <div className="flex items-center justify-between gap-4 pb-6 border-b border-neutral-200/80">
+      <div className="max-w-7xl mx-auto bg-gradient-to-b from-white via-neutral-50/30 to-neutral-50/60 rounded-3xl border border-neutral-200/90 p-4 sm:p-7 md:p-9 mb-28 md:mb-16 relative shadow-xl space-y-7 animate-in fade-in duration-300">
+        {/* Editor Glassmorphic Top Bar */}
+        <div className="flex items-center justify-between gap-4 pb-5 border-b border-neutral-200/80">
           <div className="flex items-center gap-3.5">
             <button 
               onClick={() => { navigate(getStudioRoute('news')); }}
-              className="p-2.5 text-neutral-700 hover:bg-neutral-100 rounded-2xl transition-all border border-neutral-200 shadow-3xs flex items-center justify-center bg-white"
+              className="p-2.5 text-neutral-700 hover:bg-neutral-100 hover:scale-105 rounded-2xl transition-all border border-neutral-200 shadow-3xs flex items-center justify-center bg-white"
               title="Kembali ke daftar berita"
             >
               <ArrowLeft size={20} />
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 bg-neutral-900 text-white rounded-md text-[10px] font-extrabold uppercase tracking-widest">
+                <span className="px-2.5 py-0.5 bg-neutral-900 text-white rounded-md text-[10px] font-extrabold uppercase tracking-widest shadow-2xs">
                   Studio Redaktur
                 </span>
-                <span className="text-xs text-neutral-500 font-medium">• Gnext Newsroom</span>
+                <span className="text-xs text-neutral-500 font-medium hidden sm:inline">• Gnext Newsroom Workspace</span>
               </div>
-              <h2 className="text-xl sm:text-3xl font-display font-extrabold tracking-tight text-neutral-900 mt-1">
+              <h2 className="text-xl sm:text-3xl font-display font-extrabold tracking-tight text-neutral-900 mt-0.5">
                 {currentArticle.id ? 'Edit Artikel Berita' : 'Tulis Artikel Berita Baru'}
               </h2>
               <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -1238,6 +1320,34 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
                   </button>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Live Article Quality & SEO Meter */}
+          <div className="hidden lg:flex items-center gap-4 bg-white/90 backdrop-blur-md p-2.5 px-4 rounded-2xl border border-neutral-200/90 shadow-2xs">
+            <div className="flex items-center gap-3">
+              <div className="relative w-10 h-10 flex items-center justify-center">
+                <svg className="w-10 h-10 transform -rotate-90">
+                  <circle cx="20" cy="20" r="16" stroke="currentColor" strokeWidth="3" className="text-neutral-100" fill="transparent" />
+                  <circle 
+                    cx="20" cy="20" r="16" 
+                    stroke="currentColor" strokeWidth="3.5" 
+                    className={seoScore >= 80 ? 'text-emerald-500 transition-all duration-500' : seoScore >= 50 ? 'text-amber-500 transition-all duration-500' : 'text-rose-500 transition-all duration-500'} 
+                    fill="transparent" 
+                    strokeDasharray="100" 
+                    strokeDashoffset={100 - (seoScore * 100) / 100} 
+                  />
+                </svg>
+                <span className="absolute text-[10px] font-black text-neutral-900">{seoScore}%</span>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Skor SEO & Konten</div>
+                <div className={`text-xs font-extrabold ${seoScore >= 80 ? 'text-emerald-600' : seoScore >= 50 ? 'text-amber-600' : 'text-rose-600'}`}>
+                  {seoScore >= 80 ? 'Sangat Baik 🎉' : seoScore >= 50 ? 'Cukup Baik' : 'Belum Lengkap'}
+                </div>
+              </div>
+            </div>
+          </div>
 
         {/* YOUTUBE EMBED MODAL */}
         {youtubeModalOpen && (
@@ -1474,15 +1584,6 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
             </div>
           </div>
         )}
-            </div>
-          </div>
-          <button 
-            onClick={() => { navigate(getStudioRoute('news')); }} 
-            className="p-2.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-full transition-all"
-            title="Tutup Studio"
-          >
-            <X size={22} />
-          </button>
         </div>
 
         {/* Restore Draft Notification Banner */}
@@ -2013,6 +2114,26 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
               </button>
             </div>
 
+            {/* Quick Hashtag Suggestions */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mr-1">Saran Tag Cepat:</span>
+              {['nasional', 'beritaterkini', 'politik', 'ekonomi', 'teknologi', 'gnextnews'].map(quickTag => (
+                <button
+                  key={quickTag}
+                  type="button"
+                  onClick={() => {
+                    const existing = currentArticle.tags || [];
+                    if (!existing.includes(quickTag)) {
+                      setCurrentArticle({ ...currentArticle, tags: [...existing, quickTag] });
+                    }
+                  }}
+                  className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-900 hover:text-white text-neutral-700 rounded-lg text-[11px] font-medium transition-all shadow-3xs"
+                >
+                  +#{quickTag}
+                </button>
+              ))}
+            </div>
+
             {/* Render Tag Chips */}
             {currentArticle.tags && currentArticle.tags.length > 0 ? (
               <div className="flex flex-wrap gap-2 pt-2">
@@ -2071,15 +2192,31 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
           <div className="flex gap-3">
             <button
               onClick={() => handleSave('draft')}
-              className="px-6 py-3.5 border border-neutral-200 text-neutral-700 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-neutral-50 transition-all shadow-3xs"
+              disabled={isSaving}
+              className="px-6 py-3.5 border border-neutral-200 text-neutral-700 rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-neutral-50 transition-all shadow-3xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              Simpan Draft
+              {isSaving && saveTargetStatus === 'draft' ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>Menyimpan...</span>
+                </>
+              ) : (
+                <span>Simpan Draft</span>
+              )}
             </button>
             <button
               onClick={() => handleSave('published')}
-              className="px-7 py-3.5 bg-neutral-900 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-neutral-800 transition-all shadow-md"
+              disabled={isSaving}
+              className="px-7 py-3.5 bg-neutral-900 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-neutral-800 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
             >
-              {currentArticle.status === 'published' ? 'Perbarui (Terbit)' : 'Terbitkan Sekarang'}
+              {isSaving && saveTargetStatus === 'published' ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" />
+                  <span>{currentArticle.status === 'published' ? 'Memperbarui...' : 'Menerbitkan...'}</span>
+                </>
+              ) : (
+                <span>{currentArticle.status === 'published' ? 'Perbarui (Terbit)' : 'Terbitkan Sekarang'}</span>
+              )}
             </button>
           </div>
         </div>
@@ -2095,15 +2232,31 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleSave('draft')}
-              className="px-3.5 py-2.5 bg-neutral-100 text-neutral-800 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 shadow-3xs"
+              disabled={isSaving}
+              className="px-3.5 py-2.5 bg-neutral-100 text-neutral-800 rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-neutral-200 shadow-3xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
-              Draft
+              {isSaving && saveTargetStatus === 'draft' ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>...</span>
+                </>
+              ) : (
+                <span>Draft</span>
+              )}
             </button>
             <button
               onClick={() => handleSave('published')}
-              className="px-5 py-2.5 bg-neutral-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-md hover:bg-neutral-800"
+              disabled={isSaving}
+              className="px-5 py-2.5 bg-neutral-900 text-white rounded-xl text-xs font-bold uppercase tracking-wider shadow-md hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5"
             >
-              {currentArticle.status === 'published' ? 'Perbarui' : 'Terbitkan'}
+              {isSaving && saveTargetStatus === 'published' ? (
+                <>
+                  <Loader2 size={12} className="animate-spin" />
+                  <span>Proses...</span>
+                </>
+              ) : (
+                <span>{currentArticle.status === 'published' ? 'Perbarui' : 'Terbitkan'}</span>
+              )}
             </button>
           </div>
         </div>
@@ -2861,6 +3014,90 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
           fetchArticles();
         }}
       />
+
+      {/* HIGH-END FLOATING TOAST NOTIFICATION */}
+      {toast && (
+        <div className="fixed top-5 right-5 z-[9999] max-w-md animate-in fade-in slide-in-from-top-3 duration-300">
+          <div className={`p-4 rounded-2xl shadow-2xl border backdrop-blur-md flex items-start gap-3.5 ${
+            toast.type === 'success' ? 'bg-white/95 border-emerald-200 text-neutral-900' :
+            toast.type === 'error' ? 'bg-white/95 border-red-200 text-neutral-900' :
+            toast.type === 'warning' ? 'bg-white/95 border-amber-200 text-neutral-900' :
+            'bg-white/95 border-blue-200 text-neutral-900'
+          }`}>
+            <div className={`p-2.5 rounded-xl shrink-0 ${
+              toast.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+              toast.type === 'error' ? 'bg-red-100 text-red-600' :
+              toast.type === 'warning' ? 'bg-amber-100 text-amber-600' :
+              'bg-blue-100 text-blue-600'
+            }`}>
+              {toast.type === 'success' && <CheckCircle2 size={22} />}
+              {toast.type === 'error' && <AlertCircle size={22} />}
+              {toast.type === 'warning' && <AlertTriangle size={22} />}
+              {toast.type === 'info' && <Sparkles size={22} />}
+            </div>
+
+            <div className="flex-1 min-w-0 pr-1">
+              <h4 className="font-bold text-sm leading-snug">
+                {toast.title || (
+                  toast.type === 'success' ? 'Berhasil' :
+                  toast.type === 'error' ? 'Gagal' :
+                  toast.type === 'warning' ? 'Perhatian' : 'Informasi'
+                )}
+              </h4>
+              <p className="text-xs text-neutral-600 leading-relaxed mt-0.5">{toast.message}</p>
+            </div>
+
+            <button
+              onClick={() => setToast(null)}
+              className="p-1 text-neutral-400 hover:text-neutral-700 rounded-lg transition-colors"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODERN CONFIRMATION MODAL */}
+      {confirmModal && confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-neutral-100 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-3.5">
+              <div className={`p-3 rounded-xl shrink-0 ${
+                confirmModal.type === 'danger' ? 'bg-red-50 text-red-600' :
+                confirmModal.type === 'warning' ? 'bg-amber-50 text-amber-600' :
+                'bg-blue-50 text-blue-600'
+              }`}>
+                {confirmModal.type === 'danger' ? <Trash2 size={24} /> : <AlertTriangle size={24} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-bold text-neutral-900 leading-snug">{confirmModal.title}</h3>
+                <p className="text-xs text-neutral-500 leading-relaxed mt-1">{confirmModal.message}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmModal(null)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 text-xs font-bold text-neutral-700 hover:bg-neutral-50 transition-colors"
+              >
+                {confirmModal.cancelText || 'Batal'}
+              </button>
+              <button
+                type="button"
+                onClick={confirmModal.onConfirm}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-sm ${
+                  confirmModal.type === 'danger' ? 'bg-red-600 hover:bg-red-700' :
+                  confirmModal.type === 'warning' ? 'bg-amber-600 hover:bg-amber-700' :
+                  'bg-neutral-900 hover:bg-neutral-800'
+                }`}
+              >
+                {confirmModal.confirmText}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="group_gnext_penulis" model="res.groups">
+            <field name="name">Penulis Pers</field>
+        </record>
+
+        <record id="group_gnext_manager" model="res.groups">
+            <field name="name">Manajer Pers</field>
+            <field name="implied_ids" eval="[(4, ref('group_gnext_penulis'))]"/>
+        </record>
+
+        <record id="group_gnext_admin" model="res.groups">
+            <field name="name">Administrator</field>
+            <field name="implied_ids" eval="[(4, ref('group_gnext_manager'))]"/>
+            <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+</odoo>

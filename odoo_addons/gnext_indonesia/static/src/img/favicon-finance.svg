@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Base Container -->
+  <rect width="100" height="100" rx="22" fill="url(#bgGrad)" />
+  <rect x="2" y="2" width="96" height="96" rx="20" fill="none" stroke="url(#accentGrad)" stroke-width="2" stroke-opacity="0.4" />
+  
+  <!-- Upward Trend Line Graphic -->
+  <path d="M 20 68 L 40 48 L 56 58 L 80 28" fill="none" stroke="url(#accentGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+  <polygon points="80,22 84,36 70,32" fill="#38bdf8" />
+
+  <!-- Monogram F in Gold/Cyan Accent -->
+  <text x="24" y="82" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="34" fill="#ffffff" letter-spacing="-1">F</text>
+  <circle cx="80" cy="25" r="4" fill="#f59e0b" />
+</svg>

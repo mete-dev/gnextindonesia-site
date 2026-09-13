@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_gnext_category_user,gnext.category.penulis,model_gnext_category,group_gnext_penulis,1,0,0,0
+access_gnext_category_manager,gnext.category.manager,model_gnext_category,group_gnext_manager,1,1,1,1
+access_gnext_article_user,gnext.article.penulis,model_gnext_article,group_gnext_penulis,1,1,1,0
+access_gnext_article_manager,gnext.article.manager,model_gnext_article,group_gnext_manager,1,1,1,1
+access_gnext_setting_manager,gnext.web.setting.manager,model_gnext_web_setting,group_gnext_manager,1,1,1,1
+access_gnext_partner_manager,gnext.partner.manager,model_gnext_partner,group_gnext_manager,1,1,1,1
+access_gnext_work_manager,gnext.work.manager,model_gnext_work,group_gnext_manager,1,1,1,1

@@ -362,47 +362,13 @@ export default function GnextFinancePage() {
         categories={['Semua', 'Kabar Fiskal', 'Perbankan & Fintech', 'Bursa & Emiten', 'Aset Alternatif', 'Dapur Bisnis', 'Sentra UMKM', 'Cerdas Finansial']}
         activeCategory={activeCategory}
         onSelectCategory={handleCategoryClick}
+        tickerArticles={articles.length > 0 ? getLatestTickerArticles(articles, 5) : []}
+        todayFormatted={todayFormatted}
+        getCategoryName={getCategoryFriendlyName}
+        getBasePath={getBasePath}
       />
 
-      <main className="pt-[108px] pb-20">
-        {/* TOP TICKER BANNER */}
-        <div className="w-full bg-neutral-950 text-white border-b border-neutral-800 shadow-sm fixed top-16 left-0 right-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-11 overflow-hidden">
-            <div className="flex items-center gap-2 bg-finance-600 text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wider shrink-0 mr-3 animate-pulse">
-              <Radio size={14} className="animate-spin" />
-              <span className="hidden sm:inline font-mono">FINANCIAL TICKER</span>
-              <span className="sm:hidden font-mono">FINANCE</span>
-            </div>
-
-            <div className="hidden lg:flex items-center gap-1 text-xs text-neutral-400 border-r border-neutral-700 pr-4 mr-4 shrink-0 font-calibri">
-              <Clock size={12} className="text-finance-400" />
-              <span>{todayFormatted}</span>
-            </div>
-
-            <div className="flex-1 overflow-hidden relative text-xs font-medium text-neutral-200">
-              <div className="whitespace-nowrap inline-block animate-marquee">
-                {(() => {
-                  const latest = getLatestTickerArticles(articles, 5);
-                  const items = latest.length > 0 ? [...latest, ...latest, ...latest, ...latest] : [];
-                  return items.map((a, i) => (
-                    <span key={`${a.id || 'art'}-${i}`} className="inline-flex items-center mx-6">
-                      <span className="text-finance-400 font-bold mr-2">
-                        [{getCategoryFriendlyName(a)}]
-                      </span>
-                      <Link
-                        to={`${getBasePath()}/${slugify(getCategoryFriendlyName(a))}/${slugify(a.title)}`}
-                        className="hover:text-finance-400 transition-colors"
-                      >
-                        {a.title}
-                      </Link>
-                      <span className="ml-6 text-neutral-700">•</span>
-                    </span>
-                  ));
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
+      <main className="pt-28 pb-20">
 
         {loading ? (
           <NewsFeedSkeleton portal="finance" />
@@ -418,35 +384,35 @@ export default function GnextFinancePage() {
                   {/* LEFT PRIMARY BLOCK (8 Cols) */}
                   <div className="lg:col-span-8 flex flex-col gap-6">
                     
-                    {/* Big Hero Article Card (Split Left Text, Right Photo) */}
+                    {/* Compact Hero Article Card */}
                     <Link
                       to={`${getBasePath()}/${slugify(getCategoryFriendlyName(heroMain))}/${slugify(heroMain.title)}`}
-                      className="group bg-white rounded-2xl border border-neutral-200/90 shadow-sm overflow-hidden flex flex-col md:flex-row h-auto md:min-h-[360px] hover:shadow-md hover:border-finance-400 transition-all duration-300"
+                      className="group bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/90 shadow-2xs hover:shadow-md hover:border-finance-400 transition-all duration-300 flex items-center justify-between gap-3 sm:gap-4"
                     >
                       {/* Left Side: Editorial Content */}
-                      <div className="flex-1 p-6 sm:p-8 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-4">
-                            <span className="px-2.5 py-0.5 rounded-md bg-finance-600 text-white text-[10px] font-black uppercase tracking-wider">
+                      <div className="flex-1 flex flex-col justify-between min-w-0">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2 py-0.5 rounded bg-finance-600 text-white text-[10px] font-black uppercase tracking-wider">
                               BERITA UTAMA
                             </span>
-                            <span className="px-2.5 py-0.5 rounded-md bg-finance-50 text-finance-800 text-[10px] font-extrabold uppercase tracking-wider border border-finance-200">
+                            <span className="px-2 py-0.5 rounded bg-finance-50 text-finance-800 text-[10px] font-bold uppercase tracking-wider border border-finance-200">
                               {getCategoryFriendlyName(heroMain)}
                             </span>
                           </div>
                           
-                          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.25rem] font-black text-neutral-900 leading-tight tracking-tight group-hover:text-finance-600 transition-colors duration-300">
+                          <h2 className="text-sm sm:text-base md:text-lg font-normal text-neutral-900 leading-snug tracking-tight group-hover:text-finance-600 transition-colors duration-200 line-clamp-2">
                             {heroMain.title}
                           </h2>
                           
-                          <p className="text-neutral-600 text-xs sm:text-sm mt-3.5 leading-relaxed line-clamp-3">
-                            {getCleanExcerpt(heroMain.content, 180)}
+                          <p className="text-neutral-500 text-xs leading-relaxed line-clamp-2 hidden sm:block">
+                            {getCleanExcerpt(heroMain.content, 110)}
                           </p>
                         </div>
                         
-                        <div className="mt-6 pt-4 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
-                          <span className="font-extrabold uppercase tracking-wide text-finance-600">
-                            {heroMain.news_location || 'Nasional'}
+                        <div className="mt-2.5 pt-2 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
+                          <span className="font-semibold uppercase tracking-wide text-finance-600">
+                            📍 {heroMain.news_location || 'Nasional'}
                           </span>
                           <span className="font-medium flex items-center gap-1 font-calibri">
                             <Clock size={12} />
@@ -455,26 +421,25 @@ export default function GnextFinancePage() {
                         </div>
                       </div>
 
-                      {/* Right Side: Visual Cover */}
-                      <div className="w-full md:w-[45%] h-[240px] md:h-auto bg-neutral-900 relative shrink-0 overflow-hidden">
+                      {/* Right Side: Visual Cover (Controlled compact thumbnail) */}
+                      <div className="w-28 h-20 sm:w-36 sm:h-24 md:w-44 md:h-28 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative shadow-2xs">
                         <BlurImage
                           src={getArticleImage(heroMain)}
                           alt={heroMain.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none z-10" />
                       </div>
                     </Link>
 
                     {/* Secondary Horizontal Items Side-By-Side */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {heroSub.slice(0, 2).map((sub, idx) => (
                         <Link
                           key={sub.id || idx}
                           to={`${getBasePath()}/${slugify(getCategoryFriendlyName(sub))}/${slugify(sub.title)}`}
-                          className="group bg-white p-4 rounded-xl border border-neutral-200 flex gap-4 hover:border-finance-400 hover:shadow-sm transition-all"
+                          className="group bg-white p-3 rounded-xl border border-neutral-200 flex gap-3 hover:border-finance-400 hover:shadow-2xs transition-all items-center"
                         >
-                          <div className="w-24 h-20 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative">
+                          <div className="w-20 h-16 sm:w-24 sm:h-18 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative">
                             <BlurImage
                               src={getArticleImage(sub)}
                               alt={sub.title}
@@ -483,14 +448,15 @@ export default function GnextFinancePage() {
                           </div>
                           <div className="flex flex-col justify-between min-w-0 flex-1">
                             <div>
-                              <span className="text-[9px] font-black text-finance-600 uppercase tracking-widest block mb-0.5">
+                              <span className="text-[9px] font-bold text-finance-600 uppercase tracking-wider block mb-0.5">
                                 {getCategoryFriendlyName(sub)}
                               </span>
-                              <h4 className="text-xs sm:text-sm md:text-base font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-finance-600 transition-colors">
+                              <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-finance-600 transition-colors">
                                 {sub.title}
                               </h4>
                             </div>
-                            <span className="text-[10px] text-neutral-400 font-calibri">
+                            <span className="text-[10px] text-neutral-400 font-calibri flex items-center gap-1 mt-1">
+                              <Clock size={10} />
                               {sub.news_location || 'Nasional'}
                             </span>
                           </div>
@@ -548,7 +514,7 @@ export default function GnextFinancePage() {
                               <span className="text-[10px] font-bold text-finance-600 uppercase tracking-wider block mb-0.5">
                                 {getCategoryFriendlyName(pop)}
                               </span>
-                              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-finance-600 transition-colors">
+                              <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-finance-600 transition-colors">
                                 {pop.title}
                               </h4>
                             </div>
@@ -579,7 +545,7 @@ export default function GnextFinancePage() {
                           to={`${getBasePath()}/${slugify(getCategoryFriendlyName(art))}/${slugify(art.title)}`}
                           className="group flex flex-col gap-2 bg-white p-4 rounded-xl border border-neutral-200 hover:border-finance-400 transition-all shadow-2xs"
                         >
-                          <h4 className="text-sm sm:text-base font-extrabold text-neutral-900 leading-snug group-hover:text-finance-600 transition-colors line-clamp-2">
+                          <h4 className="text-sm sm:text-base font-normal text-neutral-900 leading-snug group-hover:text-finance-600 transition-colors line-clamp-2">
                             {art.title}
                           </h4>
                           <div className="flex items-center justify-between mt-1 text-[10px] text-neutral-400">
@@ -644,11 +610,11 @@ export default function GnextFinancePage() {
                                     to={`${getBasePath()}/${slugify(getCategoryFriendlyName(focusArticle))}/${slugify(focusArticle.title)}`}
                                     className="hover:text-finance-200 transition-colors block"
                                   >
-                                    <h4 className="text-xl sm:text-2xl md:text-3xl font-black leading-tight mb-2 drop-shadow-sm text-white">
+                                    <h4 className="text-xl sm:text-2xl md:text-3xl font-normal leading-tight mb-2 drop-shadow-sm text-white">
                                       {focusArticle.title}
                                     </h4>
                                   </Link>
-                                  <p className="text-xs text-finance-100 leading-relaxed line-clamp-3">
+                                  <p className="text-xs text-finance-100 leading-relaxed line-clamp-3 font-normal">
                                     {getCleanExcerpt(focusArticle.content, 150)}
                                   </p>
                                 </div>
@@ -664,7 +630,7 @@ export default function GnextFinancePage() {
                                 <Link
                                   key={art.id || idx}
                                   to={`${getBasePath()}/${slugify(getCategoryFriendlyName(art))}/${slugify(art.title)}`}
-                                  className="hover:text-finance-200 transition-all font-semibold line-clamp-2 leading-snug border-l-2 border-finance-300 pl-3.5 text-white"
+                                  className="hover:text-finance-200 transition-all font-normal line-clamp-2 leading-snug border-l-2 border-finance-300 pl-3.5 text-white"
                                 >
                                   {art.title}
                                 </Link>
@@ -835,7 +801,7 @@ export default function GnextFinancePage() {
                                     to={`${getBasePath()}/${slugify(catName)}/${slugify(article.title)}`}
                                     className="block"
                                   >
-                                    <h4 className="text-base sm:text-xl md:text-2xl font-bold text-neutral-900 leading-snug mb-2 group-hover:text-finance-600 transition-colors">
+                                    <h4 className="text-base sm:text-xl md:text-2xl font-normal text-neutral-900 leading-snug mb-2 group-hover:text-finance-600 transition-colors">
                                       {article.title}
                                     </h4>
                                   </Link>
@@ -893,7 +859,7 @@ export default function GnextFinancePage() {
                             <span className="text-[10px] font-bold text-finance-600 uppercase tracking-wider block mb-0.5">
                               {getCategoryFriendlyName(pop)}
                             </span>
-                            <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-finance-600 transition-colors">
+                            <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-finance-600 transition-colors">
                               {pop.title}
                             </h4>
                           </div>

@@ -365,7 +365,7 @@ export default function NewsPage() {
 
       setArticles(filterValidArticles(prioritizedArticles));
 
-      let fetchedCategories: Category[] = categoriesRes.data || [];
+      let fetchedCategories: Category[] = data.categories || [];
       if (fetchedCategories.length === 0) {
         fetchedCategories = [
           { id: 'cat-ekonomi', name: 'Ekonomi & Bisnis', slug: 'ekonomi-bisnis' },
@@ -594,52 +594,13 @@ export default function NewsPage() {
         categories={categoryNames}
         activeCategory={activeCategory}
         onSelectCategory={handleCategoryClick}
+        tickerArticles={articles.length > 0 ? getLatestTickerArticles(articles, 5) : []}
+        todayFormatted={todayFormatted}
+        getCategoryName={getCategoryName}
+        getBasePath={getBasePath}
       />
 
-      <main className="pt-[108px] pb-20">
-
-        {/* TOP TICKER & BREAKING NEWS BANNER */}
-        <div className="w-full bg-neutral-950 text-white border-b border-neutral-800 shadow-sm fixed top-16 left-0 right-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-11 overflow-hidden">
-            {/* Ticker Badge */}
-            <div className="flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wider shrink-0 mr-3 animate-pulse">
-              <Radio size={14} className="animate-spin" />
-              <span className="hidden sm:inline">BREAKING NEWS</span>
-              <span className="sm:hidden">BREAKING</span>
-            </div>
-
-            {/* Date Display */}
-            <div className="hidden lg:flex items-center gap-1 text-xs text-neutral-400 border-r border-neutral-700 pr-4 mr-4 shrink-0 font-calibri">
-              <Clock size={12} className="text-red-500" />
-              <span>{todayFormatted}</span>
-            </div>
-
-            {/* Running Text Marquee */}
-            <div className="flex-1 overflow-hidden relative text-xs font-medium text-neutral-200">
-              <div className="whitespace-nowrap inline-block animate-marquee">
-                {(articles.length > 0 ? (() => {
-                  const latest = getLatestTickerArticles(articles, 5);
-                  return [...latest, ...latest, ...latest, ...latest];
-                })() : []).map((a, i) => (
-                  <span key={`${a.id || 'art'}-${i}`} className="inline-flex items-center mx-6">
-                    <span className="text-red-400 font-bold mr-2">
-                      [{getCategoryName(a.categoryId)}]
-                    </span>
-                    <Link
-                      to={`${getBasePath()}/${slugify(getCategoryName(a.categoryId))}/${slugify(a.title)}`}
-                      className="hover:text-amber-500 transition-colors"
-                    >
-                      {a.title}
-                    </Link>
-                    <span className="ml-6 text-neutral-600">•</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-
+      <main className="pt-24 md:pt-26 pb-16">
 
         {loading ? (
           <NewsFeedSkeleton portal="gnext" />
@@ -647,102 +608,106 @@ export default function NewsPage() {
           <>
             {/* CNN INDONESIA STYLE PREMIUM HOME GRID */}
             {heroMain && !searchQuery && activeCategory === 'Semua' && (
-              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 my-4 flex flex-col gap-6">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 mb-5 flex flex-col gap-4">
                 
-                {/* 2. PRIMARY SPLIT HEADLINE GRID (Left Hero Block + Right Popular Column) */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                {/* PRIMARY HEADLINE GRID (Left Hero Block + Right Popular Column) */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
                   
-                  {/* LEFT PRIMARY BLOCK (8 Cols) */}
-                  <div className="lg:col-span-8 flex flex-col gap-6">
+                  {/* LEFT PRIMARY BLOCK (8 Cols) - Auto flush height matching right column */}
+                  <div className="lg:col-span-8 flex flex-col justify-between gap-3.5 h-full">
                     
-                    {/* Big Hero Article Card (Split Left Text, Right Photo) */}
+                    {/* Main Hero Article Card - Slightly enlarged image and refined spacious typography */}
                     <Link
                       to={`${getBasePath()}/${slugify(getCategoryName(heroMain.categoryId))}/${slugify(heroMain.title)}`}
-                      className="group bg-white rounded-xl border border-neutral-200/90 shadow-2xs overflow-hidden flex flex-col md:flex-row h-auto md:min-h-[280px] hover:shadow-md hover:border-red-400 transition-all duration-300"
+                      className="group bg-white p-4 sm:p-5 md:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs hover:shadow-md hover:border-red-400 transition-all duration-300 flex items-center justify-between gap-4 sm:gap-6 flex-1 min-h-[170px]"
                     >
                       {/* Left Side: Editorial Content */}
-                      <div className="flex-1 p-4 sm:p-5 flex flex-col justify-between">
-                        <div>
-                          <div className="flex items-center gap-2 mb-2.5">
-                            <span className="px-2 py-0.5 rounded bg-red-600 text-white text-[9px] font-extrabold uppercase tracking-wider">
+                      <div className="flex-1 flex flex-col justify-between h-full min-w-0">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="px-2.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">
                               BERITA UTAMA
                             </span>
-                            <span className="px-2 py-0.5 rounded bg-neutral-100 text-neutral-800 text-[9px] font-bold uppercase tracking-wider border border-neutral-200">
+                            <span className="px-2.5 py-0.5 rounded bg-neutral-100 text-neutral-700 text-[10px] font-bold uppercase tracking-wider border border-neutral-200">
                               {getCategoryName(heroMain.categoryId)}
                             </span>
                           </div>
                           
-                          <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-neutral-900 leading-snug tracking-tight group-hover:text-red-600 transition-colors duration-300">
+                          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-normal text-neutral-900 leading-snug tracking-tight group-hover:text-red-600 transition-colors duration-200 line-clamp-2 md:line-clamp-3">
                             {heroMain.title}
                           </h2>
                           
-                          <p className="text-neutral-600 text-xs mt-2 leading-relaxed line-clamp-2">
-                            {getCleanExcerpt(heroMain.content, 140)}
-                          </p>
+                          {heroMain.content && (
+                            <p className="text-neutral-500 text-xs sm:text-[13px] leading-relaxed line-clamp-2 hidden sm:block">
+                              {getCleanExcerpt(heroMain.content, 130)}
+                            </p>
+                          )}
                         </div>
                         
-                        <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-[11px] text-neutral-400">
-                          <span className="font-bold uppercase tracking-wide text-red-600">
-                            {heroMain.news_location || 'Nasional'}
+                        <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
+                          <span className="font-semibold uppercase tracking-wide text-red-600">
+                            📍 {heroMain.news_location || 'Nasional'}
                           </span>
                           <span className="font-medium flex items-center gap-1 font-calibri">
-                            <Clock size={11} />
+                            <Clock size={12} />
                             {formatDate(heroMain.date, (heroMain as any).created_at)}
                           </span>
                         </div>
                       </div>
 
-                      {/* Right Side: Visual Cover */}
-                      <div className="w-full md:w-[40%] h-[180px] md:h-auto bg-neutral-900 relative shrink-0 overflow-hidden">
+                      {/* Right Side: Visual Cover - Slightly larger as requested */}
+                      <div className="w-36 h-28 sm:w-48 sm:h-36 md:w-60 md:h-44 lg:w-72 lg:h-48 rounded-xl overflow-hidden shrink-0 bg-neutral-950 relative shadow-xs self-center">
                         <BlurImage
                           src={getArticleImage(heroMain)}
                           alt={heroMain.title}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none z-10" />
                       </div>
                     </Link>
 
                     {/* Secondary Horizontal Items Side-By-Side */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      {heroSub.slice(0, 2).map((sub, idx) => (
-                        <Link
-                          key={sub.id || idx}
-                          to={`${getBasePath()}/${slugify(getCategoryName(sub.categoryId))}/${slugify(sub.title)}`}
-                          className="group bg-white p-3.5 rounded-xl border border-neutral-200 flex gap-3 hover:border-red-400 hover:shadow-2xs transition-all"
-                        >
-                          <div className="w-20 h-16 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative">
-                            <BlurImage
-                              src={getArticleImage(sub)}
-                              alt={sub.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                          </div>
-                          <div className="flex flex-col justify-between min-w-0 flex-1">
-                            <div>
-                              <span className="text-[9px] font-bold text-red-600 uppercase tracking-wider block mb-0.5">
-                                {getCategoryName(sub.categoryId)}
-                              </span>
-                              <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
-                                {sub.title}
-                              </h4>
+                    {heroSub.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        {heroSub.slice(0, 2).map((sub, idx) => (
+                          <Link
+                            key={sub.id || idx}
+                            to={`${getBasePath()}/${slugify(getCategoryName(sub.categoryId))}/${slugify(sub.title)}`}
+                            className="group bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/90 flex gap-3 hover:border-red-400 hover:shadow-2xs transition-all items-center h-full"
+                          >
+                            <div className="w-24 h-20 sm:w-28 sm:h-22 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative">
+                              <BlurImage
+                                src={getArticleImage(sub)}
+                                alt={sub.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
                             </div>
-                            <span className="text-[10px] text-neutral-400 font-calibri">
-                              {sub.news_location || 'Nasional'}
-                            </span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
+                            <div className="flex flex-col justify-between min-w-0 flex-1 h-full py-0.5">
+                              <div>
+                                <span className="text-[9px] font-bold text-red-600 uppercase tracking-wider block mb-1">
+                                  {getCategoryName(sub.categoryId)}
+                                </span>
+                                <h4 className="text-xs sm:text-[13px] font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
+                                  {sub.title}
+                                </h4>
+                              </div>
+                              <div className="flex items-center justify-between text-[10px] text-neutral-400 font-calibri mt-2 pt-1 border-t border-neutral-100">
+                                <span>📍 {sub.news_location || 'Nasional'}</span>
+                                <span>{formatDate(sub.date, (sub as any).created_at)}</span>
+                              </div>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
 
                   </div>
 
                   {/* RIGHT SIDEBAR POPULAR LIST (4 Cols - "TERPOPULER HARIAN") */}
-                  <div className="lg:col-span-4 bg-white p-4 rounded-xl border border-neutral-200 shadow-2xs h-full flex flex-col justify-between">
+                  <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between h-full">
                     <div>
-                      <div className="flex items-center justify-between border-b-2 border-red-600 pb-2.5 mb-3 gap-2">
-                        <h3 className="text-sm font-extrabold uppercase tracking-tight text-neutral-900 flex items-center gap-1.5">
-                          <TrendingUp size={16} className="text-red-600" />
+                      <div className="flex items-center justify-between border-b-2 border-red-600 pb-2.5 mb-2.5 gap-2">
+                        <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-tight text-neutral-900 flex items-center gap-1.5">
+                          <TrendingUp size={15} className="text-red-600" />
                           <span>TERPOPULER HARIAN</span>
                         </h3>
                         <span className="text-[9px] text-red-600 font-bold tracking-wider bg-red-50 px-2 py-0.5 rounded border border-red-200 uppercase">
@@ -757,7 +722,7 @@ export default function NewsPage() {
                             to={`${getBasePath()}/${slugify(getCategoryName(pop.categoryId))}/${slugify(pop.title)}`}
                             className="py-2.5 group flex gap-3 items-start hover:bg-neutral-50 px-1.5 rounded-lg transition-colors"
                           >
-                            <span className={`text-xl font-black font-display shrink-0 w-6 text-center ${
+                            <span className={`text-lg font-black font-display shrink-0 w-5 text-center ${
                               idx === 0 ? 'text-red-600' : 'text-neutral-400'
                             }`}>
                               0{idx + 1}
@@ -766,7 +731,7 @@ export default function NewsPage() {
                               <span className="text-[9px] font-bold text-red-600 uppercase tracking-wider block mb-0.5">
                                 {getCategoryName(pop.categoryId)}
                               </span>
-                              <h4 className="text-xs font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
+                              <h4 className="text-xs font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
                                 {pop.title}
                               </h4>
                             </div>
@@ -778,45 +743,47 @@ export default function NewsPage() {
 
                 </div>
 
-                {/* 3. MID GRID HEADLINES */}
-                <div className="border-t border-neutral-200 pt-6">
-                  <div className="pb-3 border-b border-neutral-200 mb-4">
-                    <h3 className="text-sm md:text-base font-extrabold uppercase tracking-wider text-neutral-900">
-                      RAGAM BERITA TERKINI
-                    </h3>
+                {/* 3. MID GRID HEADLINES (Only if more than 3 articles exist) */}
+                {articles.length > 3 && (
+                  <div className="border-t border-neutral-200/90 pt-4">
+                    <div className="pb-2 border-b border-neutral-200 mb-3">
+                      <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-neutral-900">
+                        RAGAM BERITA TERKINI
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {(() => {
+                        const heroIds = new Set([heroMain?.id, ...heroSub.map(s => s.id)].filter(Boolean));
+                        const distinctArticles = articles.filter(a => !heroIds.has(a.id));
+                        const listToDisplay = distinctArticles.slice(0, 3);
+                        return listToDisplay.map((art, idx) => (
+                          <Link
+                            key={art.id || idx}
+                            to={`${getBasePath()}/${slugify(getCategoryName(art.categoryId))}/${slugify(art.title)}`}
+                            className="group flex flex-col gap-1"
+                          >
+                            <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug group-hover:text-red-600 transition-colors line-clamp-2">
+                              {art.title}
+                            </h4>
+                            <span className="text-[9px] text-red-600 font-extrabold uppercase tracking-wider block">
+                              {getCategoryName(art.categoryId)}
+                            </span>
+                          </Link>
+                        ));
+                      })()}
+                    </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {(() => {
-                      const heroIds = new Set([heroMain?.id, ...heroSub.map(s => s.id)].filter(Boolean));
-                      const distinctArticles = articles.filter(a => !heroIds.has(a.id));
-                      const listToDisplay = distinctArticles.length >= 3 ? distinctArticles.slice(0, 3) : articles.slice(3, 6);
-                      return listToDisplay.map((art, idx) => (
-                        <Link
-                          key={art.id || idx}
-                          to={`${getBasePath()}/${slugify(getCategoryName(art.categoryId))}/${slugify(art.title)}`}
-                          className="group flex flex-col gap-2"
-                        >
-                          <h4 className="text-sm sm:text-base md:text-lg font-extrabold text-neutral-900 leading-snug group-hover:text-red-600 transition-colors line-clamp-2">
-                            {art.title}
-                          </h4>
-                          <span className="text-[10px] text-red-600 font-extrabold uppercase tracking-wider block">
-                            {getCategoryName(art.categoryId)}
-                          </span>
-                        </Link>
-                      ));
-                    })()}
-                  </div>
-                </div>
+                )}
 
                 {/* 5. RED ACCENT SPECIAL SEGMENT ("SOROTAN UTAMA") */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start my-2">
                   
                   {/* LEFT RED-ACCENT FOCUS BOX */}
-                  <div className="lg:col-span-12 bg-red-700 text-white rounded-2xl p-6 sm:p-8 shadow-md relative overflow-hidden flex flex-col gap-6">
+                  <div className="lg:col-span-12 bg-red-700 text-white rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden flex flex-col gap-4">
                     <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/30 rounded-full translate-x-20 -translate-y-20 pointer-events-none" />
                     
-                    <div className="flex items-center justify-between border-b border-red-500 pb-3 z-10">
-                      <h3 className="text-sm sm:text-base md:text-lg font-black uppercase tracking-widest flex items-center gap-2">
+                    <div className="flex items-center justify-between border-b border-red-500/80 pb-2.5 z-10">
+                      <h3 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-widest flex items-center gap-2">
                         <span className="w-2.5 h-2.5 bg-white rounded-full animate-ping" />
                         <span>SOROTAN UTAMA</span>
                       </h3>
@@ -835,11 +802,11 @@ export default function NewsPage() {
 
                         return (
                           <>
-                            <div className="flex flex-col md:flex-row gap-6 items-stretch w-full h-full z-10">
-                              {/* Focus Image */}
+                            <div className="flex flex-col md:flex-row gap-5 lg:gap-7 items-center md:items-stretch w-full z-10">
+                              {/* Focus Image - Proportional aspect ratio & controlled height for clean single screen fit */}
                               <Link 
                                 to={`${getBasePath()}/${slugify(getCategoryName(focusArticle.categoryId))}/${slugify(focusArticle.title)}`}
-                                className="w-full md:w-[45%] rounded-xl overflow-hidden bg-neutral-900 shrink-0 relative shadow-md group block h-auto self-stretch min-h-[200px]"
+                                className="w-full md:w-[42%] lg:w-[38%] rounded-xl overflow-hidden bg-neutral-900 shrink-0 relative shadow-md group block aspect-[16/10] sm:aspect-[16/9] md:aspect-auto md:h-52 lg:h-56"
                               >
                                 <BlurImage
                                   src={getArticleImage(focusArticle)}
@@ -849,36 +816,36 @@ export default function NewsPage() {
                               </Link>
 
                               {/* Focus Content Text */}
-                              <div className="flex flex-col justify-between flex-1 h-full py-0.5">
+                              <div className="flex flex-col justify-between flex-1 py-0.5 min-w-0">
                                 <div>
-                                  <span className="text-[9px] font-black text-amber-300 uppercase tracking-widest block mb-1">
+                                  <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest block mb-1">
                                     {getCategoryName(focusArticle.categoryId)}
                                   </span>
                                   <Link 
                                     to={`${getBasePath()}/${slugify(getCategoryName(focusArticle.categoryId))}/${slugify(focusArticle.title)}`}
                                     className="hover:text-amber-200 transition-colors block"
                                   >
-                                    <h4 className="text-xl sm:text-2xl md:text-3xl font-black leading-tight mb-2 drop-shadow-sm">
+                                    <h4 className="text-xl sm:text-2xl md:text-[25px] lg:text-[28px] font-normal leading-snug mb-2 drop-shadow-sm line-clamp-3">
                                       {focusArticle.title}
                                     </h4>
                                   </Link>
-                                  <p className="text-xs text-red-100 leading-relaxed line-clamp-3">
-                                    {getCleanExcerpt(focusArticle.content, 150)}
+                                  <p className="text-xs sm:text-sm text-red-100/90 leading-relaxed line-clamp-2 sm:line-clamp-3 font-normal">
+                                    {getCleanExcerpt(focusArticle.content, 140)}
                                   </p>
                                 </div>
-                                <span className="text-[10px] text-red-200 mt-4 font-mono block">
+                                <span className="text-[10px] text-red-200 mt-2 sm:mt-3 font-mono block">
                                   {focusArticle.news_location || 'Nasional'} • {formatDate(focusArticle.date, (focusArticle as any).created_at)}
                                 </span>
                               </div>
                             </div>
 
-                            {/* Red Box Quick-Links footer */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-red-500 pt-4 z-10 text-xs">
+                            {/* Red Box Quick-Links footer: Clear, larger font for bottom 3 titles */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 border-t border-red-500/80 pt-3 z-10">
                               {subSorotan.map((art, idx) => (
                                 <Link
                                   key={art.id || idx}
                                   to={`${getBasePath()}/${slugify(getCategoryName(art.categoryId))}/${slugify(art.title)}`}
-                                  className="hover:text-amber-200 transition-all font-semibold line-clamp-2 leading-snug border-l-2 border-amber-300 pl-3.5"
+                                  className="hover:text-amber-200 transition-all font-normal text-xs sm:text-sm md:text-[14px] line-clamp-2 leading-snug border-l-2 border-amber-300 pl-3 py-0.5"
                                 >
                                   {art.title}
                                 </Link>
@@ -888,7 +855,7 @@ export default function NewsPage() {
                         );
                       })()
                     ) : (
-                      <div className="z-10 py-10 text-center text-red-100 font-semibold">
+                      <div className="z-10 py-8 text-center text-red-100 font-semibold text-sm">
                         Koleksi artikel sorotan utama sedang disiapkan redaksi.
                       </div>
                     )}
@@ -1047,7 +1014,7 @@ export default function NewsPage() {
                                 to={`${getBasePath()}/${slugify(catName)}/${slugify(article.title)}`}
                                 className="block"
                               >
-                                <h4 className="text-base sm:text-xl md:text-2xl font-bold text-neutral-900 leading-snug mb-2 group-hover:text-red-600 transition-colors">
+                                <h4 className="text-base sm:text-lg md:text-xl font-normal text-neutral-900 leading-snug mb-2 group-hover:text-red-600 transition-colors">
                                   {article.title}
                                 </h4>
                               </Link>
@@ -1059,7 +1026,7 @@ export default function NewsPage() {
                               <div className="mt-auto flex items-center justify-between pt-2 border-t border-neutral-100">
                                 <Link
                                   to={`${getBasePath()}/${slugify(catName)}/${slugify(article.title)}`}
-                                  className="inline-flex items-center gap-1 text-xs font-bold text-red-600 uppercase tracking-wider hover:underline"
+                                  className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 uppercase tracking-wider hover:underline"
                                 >
                                   <span>Baca Berita</span>
                                   <ChevronRight size={14} />
@@ -1080,7 +1047,7 @@ export default function NewsPage() {
               {/* TERPOPULER RANKING CARD */}
               <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm">
                 <div className="flex items-center justify-between border-b-2 border-red-600 pb-3 mb-4 gap-2">
-                  <h3 className="text-base font-black uppercase tracking-tight text-neutral-900 flex items-center gap-2">
+                  <h3 className="text-sm sm:text-base font-extrabold uppercase tracking-tight text-neutral-900 flex items-center gap-2">
                     <Flame size={18} className="text-red-600" />
                     <span>TERPOPULER MINGGUAN</span>
                   </h3>
@@ -1113,7 +1080,7 @@ export default function NewsPage() {
                         <span className="text-[10px] font-bold text-red-600 uppercase tracking-wider block mb-0.5">
                           {getCategoryName(pop.categoryId)}
                         </span>
-                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
+                        <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
                           {pop.title}
                         </h4>
                         <div className="flex items-center gap-3 text-[10px] text-neutral-400 mt-1 font-mono">

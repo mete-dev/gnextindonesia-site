@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="article_welcome_gnext" model="gnext.article">
+            <field name="title">Selamat Datang di Portal Resmi Gnext Indonesia</field>
+            <field name="category_id" ref="cat_teknologi"/>
+            <field name="portal">gnext</field>
+            <field name="status">published</field>
+            <field name="news_location">Nasional</field>
+            <field name="tags">gnext, media, startup, indonesia</field>
+            <field name="og_title">Gnext Indonesia - Media &amp; Creative Hub</field>
+            <field name="og_description">Platform publikasi dan jejaring kreator media digital masa kini.</field>
+            <field name="content"><![CDATA[
+                <h2>Menghubungkan Kreator dan Informasi Masa Depan</h2>
+                <p>Gnext Indonesia hadir sebagai ekosistem media independen dan ruang tumbuh bagi para kreator, jurnalis muda, dan pegiat industri kreatif digital.</p>
+            ]]></field>
+        </record>
+
+        <record id="article_yoiki_jatim_sample" model="gnext.article">
+            <field name="title">Eksplorasi Potensi Ekonomi Kreatif dan Budaya Jawa Timur</field>
+            <field name="category_id" ref="cat_regional"/>
+            <field name="portal">yoikijatim</field>
+            <field name="status">published</field>
+            <field name="news_location">Surabaya</field>
+            <field name="tags">jatim, surabaya, yoikijatim, budaya</field>
+            <field name="content"><![CDATA[
+                <h2>Jawa Timur: Pusat Pertumbuhan Kreator Regional</h2>
+                <p>Yoiki Jatim meliput ragam dinamika kota dan kabupaten di Jawa Timur, mulai dari potensi lokal, destinasi kuliner, hingga inovasi generasi muda.</p>
+            ]]></field>
+        </record>
+
+        <record id="article_lumajang_talks_sample" model="gnext.article">
+            <field name="title">Sorotan Komunitas dan Perkembangan Terkini di Lumajang</field>
+            <field name="category_id" ref="cat_regional"/>
+            <field name="portal">lumajangtalks</field>
+            <field name="status">published</field>
+            <field name="news_location">Senduro</field>
+            <field name="tags">lumajang, wisata, komunitas, lumajangtalks</field>
+            <field name="content"><![CDATA[
+                <h2>Lumajang Talks: Suara dan Aspirasi Warga</h2>
+                <p>Portal kabar dan perbincangan aktual seputar keindahan alam, pariwisata, dan kehidupan sosial di Kabupaten Lumajang.</p>
+            ]]></field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="cat_teknologi" model="gnext.category">
+            <field name="name">Teknologi</field>
+            <field name="slug">teknologi</field>
+        </record>
+        <record id="cat_kreatif" model="gnext.category">
+            <field name="name">Kreatif</field>
+            <field name="slug">kreatif</field>
+        </record>
+        <record id="cat_bisnis" model="gnext.category">
+            <field name="name">Bisnis</field>
+            <field name="slug">bisnis</field>
+        </record>
+        <record id="cat_lifestyle" model="gnext.category">
+            <field name="name">Lifestyle</field>
+            <field name="slug">lifestyle</field>
+        </record>
+        <record id="cat_regional" model="gnext.category">
+            <field name="name">Regional</field>
+            <field name="slug">regional</field>
+        </record>
+    </data>
+</odoo>

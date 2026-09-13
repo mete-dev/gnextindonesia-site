@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top Menu -->
+    <menuitem id="menu_gnext_root" name="Gnext Media" sequence="10" web_icon="gnext_indonesia,static/description/icon.png"/>
+
+    <!-- Redaksi Menu -->
+    <menuitem id="menu_gnext_news" name="Manajemen Berita" parent="menu_gnext_root" sequence="10"/>
+    <menuitem id="menu_gnext_article" name="Artikel Berita" parent="menu_gnext_news" action="action_gnext_article" sequence="10"/>
+    <menuitem id="menu_gnext_category" name="Kategori" parent="menu_gnext_news" action="action_gnext_category" sequence="20"/>
+
+    <!-- Portofolio & Mitra -->
+    <menuitem id="menu_gnext_portfolio" name="Portofolio &amp; Partner" parent="menu_gnext_root" sequence="20"/>
+    <menuitem id="menu_gnext_work" name="Karya Instagram" parent="menu_gnext_portfolio" action="action_gnext_work" sequence="10"/>
+    <menuitem id="menu_gnext_partner" name="Mitra Kolaborasi" parent="menu_gnext_portfolio" action="action_gnext_partner" sequence="20"/>
+
+    <!-- Konfigurasi -->
+    <menuitem id="menu_gnext_config" name="Konfigurasi" parent="menu_gnext_root" sequence="30"/>
+    <menuitem id="menu_gnext_setting" name="Pengaturan Web &amp; Wilayah" parent="menu_gnext_config" action="action_gnext_web_setting" sequence="10"/>
+</odoo>

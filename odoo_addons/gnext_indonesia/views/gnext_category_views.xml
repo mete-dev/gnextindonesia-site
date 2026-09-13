@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_gnext_category_tree" model="ir.ui.view">
+        <field name="name">gnext.category.tree</field>
+        <field name="model">gnext.category</field>
+        <field name="arch" type="xml">
+            <tree string="Kategori Berita">
+                <field name="name"/>
+                <field name="slug"/>
+                <field name="parent_id"/>
+                <field name="article_count"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_gnext_category_form" model="ir.ui.view">
+        <field name="name">gnext.category.form</field>
+        <field name="model">gnext.category</field>
+        <field name="arch" type="xml">
+            <form string="Kategori Berita">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Nama Kategori"/>
+                        <h1><field name="name" placeholder="Misal: Teknologi, Bisnis, Kreatif"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="slug"/>
+                            <field name="parent_id"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                            <field name="article_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Sub-Kategori">
+                            <field name="child_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="slug"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_gnext_category" model="ir.actions.act_window">
+        <field name="name">Kategori Berita</field>
+        <field name="res_model">gnext.category</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

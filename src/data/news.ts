@@ -28,8 +28,8 @@ export function isTrialArticle(article: any): boolean {
     return true;
   }
 
-  // Hide articles with trivial or incomplete title/content
-  if (title.length < 10 || content.length < 20) {
+  // Hide articles with trivial or incomplete title (only validate content if content was actually fetched)
+  if (title.length < 5 || (article.content !== undefined && content.length > 0 && content.length < 10)) {
     return true;
   }
 

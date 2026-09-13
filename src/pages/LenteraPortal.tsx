@@ -417,48 +417,13 @@ export default function LenteraPortalPage() {
         categories={locations}
         activeCategory={activeCategory}
         onSelectCategory={handleCategoryClick}
+        tickerArticles={articles.length > 0 ? getLatestTickerArticles(articles, 5) : []}
+        todayFormatted={todayFormatted}
+        getCategoryName={getCategoryTag}
+        getBasePath={getBasePath}
       />
 
-      <main className="pt-[108px] pb-20">
-        {/* TOP TICKER BANNER (DARK COFFEE & GOLD ACCENTS) */}
-        <div className="w-full bg-[#1B0F08] text-white border-b border-[#D98319]/35 shadow-md fixed top-16 left-0 right-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center h-11 overflow-hidden">
-            <div className="flex items-center gap-2 bg-[#D98319] text-white px-3 py-1 rounded text-xs font-bold uppercase tracking-wider shrink-0 mr-3 animate-pulse shadow-sm">
-              <Radio size={14} className="animate-spin text-white" />
-              <span className="hidden sm:inline">{portalName.toUpperCase()} TODAY</span>
-              <span className="sm:hidden">{portalName.toUpperCase()}</span>
-            </div>
-
-            <div className="hidden lg:flex items-center gap-1.5 text-xs text-[#EADCC9] border-r border-[#3A2315] pr-4 mr-4 shrink-0 font-calibri">
-              <Clock size={12} className="text-[#D98319]" />
-              <span>{todayFormatted}</span>
-            </div>
-
-            <div className="flex-1 overflow-hidden relative text-xs font-medium text-[#FAF7F2]">
-              <div className="whitespace-nowrap inline-block animate-marquee">
-                {(articles.length > 0 ? (() => {
-                  const latest = getLatestTickerArticles(articles, 5);
-                  return [...latest, ...latest, ...latest, ...latest];
-                })() : []).map((a, i) => (
-                  <span key={`${a.id || 'art'}-${i}`} className="inline-flex items-center mx-6">
-                    <span className="text-[#D98319] font-bold mr-2">
-                      [{getCategoryTag(a.categoryId)}]
-                    </span>
-                    <Link
-                      to={`${basePath}/${slugify(getCategoryTag(a.categoryId))}/${slugify(a.title)}`}
-                      className="hover:text-[#F5A847] transition-colors"
-                    >
-                      {a.title}
-                    </Link>
-                    <span className="ml-6 text-[#5C4435]">•</span>
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-
+      <main className="pt-28 pb-20">
 
         {loading ? (
           <NewsFeedSkeleton portal={portalId} />
@@ -500,7 +465,7 @@ export default function LenteraPortalPage() {
                             </div>
 
                             {/* Headline Title */}
-                            <h2 style={{ fontSize: '28px' }} className="font-sans font-extrabold text-white leading-tight tracking-tight group-hover:text-[#F5A847] transition-colors">
+                            <h2 className="text-xl sm:text-2xl md:text-3xl font-sans font-normal text-white leading-tight tracking-tight group-hover:text-[#F5A847] transition-colors">
                               {heroMain.title}
                             </h2>
                           </div>
@@ -538,10 +503,10 @@ export default function LenteraPortalPage() {
                               </span>
                             </div>
                             <div className="flex flex-col flex-1 min-w-0">
-                              <span className="text-[10px] font-black text-[#8C4A21] uppercase tracking-wider mb-1">
+                              <span className="text-[10px] font-bold text-[#8C4A21] uppercase tracking-wider mb-1">
                                 {getCategoryTag(sub.categoryId)}
                               </span>
-                              <h4 className="text-xs sm:text-sm font-bold text-[#23150C] leading-snug line-clamp-2 group-hover:text-[#8C4A21] transition-colors font-sans">
+                              <h4 className="text-xs sm:text-sm font-normal text-[#23150C] leading-snug line-clamp-2 group-hover:text-[#8C4A21] transition-colors font-sans">
                                 {sub.title}
                               </h4>
                               <span className="text-[10px] text-[#8C715E] mt-1 font-calibri flex items-center gap-1">
@@ -564,7 +529,7 @@ export default function LenteraPortalPage() {
                 {/* Left Feed */}
                 <div className="lg:col-span-8 flex flex-col gap-6">
                   <div className="flex items-center justify-between border-b-2 border-[#8C4A21] pb-2 bg-white px-4 py-3 rounded-t-2xl shadow-sm border border-[#EADCC9]">
-                    <h3 className="text-lg font-black uppercase tracking-tight text-[#23150C] flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-[#23150C] flex items-center gap-2">
                       <Flame size={18} className="text-[#8C4A21]" />
                       <span>
                         {searchQuery
@@ -598,13 +563,22 @@ export default function LenteraPortalPage() {
                       <p className="text-sm font-medium text-[#5C4435]">
                         Belum ada berita untuk kategori ini di {portalName}.
                       </p>
+                      <button
+                        onClick={() => {
+                          setActiveCategory('Semua');
+                          setSearchQuery('');
+                        }}
+                        className="mt-4 px-4 py-2 bg-[#8C4A21] text-white rounded-lg text-xs font-bold uppercase"
+                      >
+                        Reset Filter
+                      </button>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-4">
                       <AnimatePresence mode="popLayout">
                         {filteredArticles.slice(0, 16).map((article) => {
                           const catName = getCategoryTag(article.categoryId);
-                          const image = (article as any).cover_image;
+                          const image = getArticleImage(article);
 
                           return (
                             <motion.div
@@ -614,14 +588,14 @@ export default function LenteraPortalPage() {
                               exit={{ opacity: 0, y: 10 }}
                               transition={{ duration: 0.3 }}
                               key={article.id}
-                              className="group bg-white p-4 sm:p-5 rounded-2xl border border-[#EADCC9] hover:border-[#D98319] hover:shadow-md transition-all"
+                              className="group bg-white p-4 sm:p-5 rounded-2xl border border-[#EADCC9] hover:border-[#8C4A21] hover:shadow-md transition-all"
                             >
                               <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch h-full">
                                 <Link
                                   to={`${getBasePath()}/${slugify(catName)}/${slugify(
                                     article.title
                                   )}`}
-                                  className="w-full aspect-[16/10] sm:aspect-none sm:w-48 sm:h-auto sm:self-stretch rounded-xl overflow-hidden shrink-0 bg-[#1E120A] relative"
+                                  className="w-full aspect-[16/10] sm:aspect-none sm:w-48 sm:h-auto sm:self-stretch rounded-xl overflow-hidden shrink-0 bg-[#1E120A] relative group-hover:opacity-95"
                                 >
                                   <BlurImage
                                     src={image}
@@ -666,13 +640,13 @@ export default function LenteraPortalPage() {
                                     )}`}
                                     className="block"
                                   >
-                                    <h4 className="text-base sm:text-xl font-bold text-[#23150C] leading-snug mb-2 group-hover:text-[#8C4A21] transition-colors">
+                                    <h4 className="text-base sm:text-lg md:text-xl font-normal text-[#23150C] leading-snug mb-2 group-hover:text-[#8C4A21] transition-colors">
                                       {article.title}
                                     </h4>
                                   </Link>
 
                                   <p className="text-xs sm:text-sm text-[#5C4435] line-clamp-2 leading-relaxed mb-3">
-                                    {article.content}
+                                    {getCleanExcerpt(article.content, 140)}
                                   </p>
 
                                   <div className="mt-auto flex items-center justify-between pt-2 border-t border-[#F2E8DC]">
@@ -680,7 +654,7 @@ export default function LenteraPortalPage() {
                                       to={`${getBasePath()}/${slugify(catName)}/${slugify(
                                         article.title
                                       )}`}
-                                      className="inline-flex items-center gap-1 text-xs font-bold text-[#8C4A21] uppercase tracking-wider hover:underline"
+                                      className="inline-flex items-center gap-1 text-xs font-semibold text-[#8C4A21] uppercase tracking-wider hover:underline"
                                     >
                                       <span>Baca Selengkapnya</span>
                                       <ChevronRight size={14} />
@@ -728,7 +702,7 @@ export default function LenteraPortalPage() {
                             <span className="text-[10px] font-bold text-[#8C4A21] uppercase tracking-wider block mb-0.5">
                               {getCategoryTag(pop.categoryId)}
                             </span>
-                            <h4 className="text-xs sm:text-sm font-bold text-[#23150C] leading-snug line-clamp-2 group-hover:text-[#8C4A21] transition-colors">
+                            <h4 className="text-xs sm:text-sm font-normal text-[#23150C] leading-snug line-clamp-2 group-hover:text-[#8C4A21] transition-colors">
                               {pop.title}
                             </h4>
                             <div className="flex items-center gap-3 text-[10px] text-[#8C715E] mt-1 font-mono">

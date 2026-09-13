@@ -1,0 +1,56 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+#   * gnext_indonesia
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 17.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-09-12 15:00+0000\n"
+"PO-Revision-Date: 2026-09-12 15:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: English <en@li.org>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. module: gnext_indonesia
+#: model:ir.module.category,name:gnext_indonesia.module_category_gnext
+msgid "Gnext Media"
+msgstr "Gnext Media"
+
+#. module: gnext_indonesia
+#: model:res.groups,name:gnext_indonesia.group_gnext_penulis
+msgid "Penulis Pers"
+msgstr "Press Writer"
+
+#. module: gnext_indonesia
+#: model:res.groups,name:gnext_indonesia.group_gnext_manager
+msgid "Manajer Pers"
+msgstr "Press Manager"
+
+#. module: gnext_indonesia
+#: model:res.groups,name:gnext_indonesia.group_gnext_admin
+msgid "Administrator"
+msgstr "Administrator"
+
+#. module: gnext_indonesia
+#: model:ir.model.fields,field_description:gnext_indonesia.field_gnext_article__title
+msgid "Judul Artikel"
+msgstr "Article Title"
+
+#. module: gnext_indonesia
+#: model:ir.model.fields,field_description:gnext_indonesia.field_gnext_article__portal
+msgid "Portal Berita"
+msgstr "News Portal"
+
+#. module: gnext_indonesia
+#: model:ir.model.fields,field_description:gnext_indonesia.field_gnext_article__status
+msgid "Status"
+msgstr "Publication Status"
+
+#. module: gnext_indonesia
+#: model:ir.model.fields,field_description:gnext_indonesia.field_gnext_article__content
+msgid "Isi Konten Artikel"
+msgstr "Article Content"

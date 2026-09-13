@@ -14,10 +14,10 @@ const CACHE_TTL = 300000; // 5 minutes cache for articles list
 const META_CACHE_TTL = 900000; // 15 minutes cache for categories/settings/users
 
 const STORAGE_KEYS = {
-  ARTICLES: 'gnext_cache_articles_v3',
-  CATEGORIES: 'gnext_cache_categories_v3',
-  SETTINGS: 'gnext_cache_settings_v3',
-  TIMESTAMP: 'gnext_cache_time_v3',
+  ARTICLES: 'gnext_cache_articles_v4',
+  CATEGORIES: 'gnext_cache_categories_v4',
+  SETTINGS: 'gnext_cache_settings_v4',
+  TIMESTAMP: 'gnext_cache_time_v4',
 };
 
 // Safe sessionStorage helpers
