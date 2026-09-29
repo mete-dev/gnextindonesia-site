@@ -168,9 +168,14 @@ export default function Studio() {
         {/* Sidebar Header */}
         <div className="px-3 py-3 border-b border-neutral-200 flex items-center justify-between bg-neutral-50/50">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-neutral-900 text-white font-bold flex items-center justify-center text-xs shadow-sm font-display shrink-0">
-              GS
-            </div>
+            <img 
+              src="/logo.svg" 
+              alt="Gnext Logo" 
+              className="w-8 h-8 object-contain shrink-0 rounded-lg p-0.5 bg-neutral-900 shadow-xs" 
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = '/favicon-gnext.png';
+              }}
+            />
             <div className="min-w-0">
               <h1 className="text-sm font-display font-bold leading-tight text-neutral-900 truncate">Studio Dashboard</h1>
               <p className="text-[10px] text-neutral-500 font-medium truncate">Gnext Publishing</p>

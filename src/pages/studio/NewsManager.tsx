@@ -22,6 +22,7 @@ import { indonesiaLocations, EAST_JAVA_CITIES, LUMAJANG_DISTRICTS } from '../../
 import { HeroImagePreview } from '../../components/studio/HeroImagePreview';
 import { ImageCropperModal } from '../../components/studio/ImageCropperModal';
 import { BackupRestoreModal } from '../../components/studio/BackupRestoreModal';
+import { SocialCardExporterModal } from '../../components/studio/SocialCardExporterModal';
 import { compressImageForNews } from '../../lib/imageCompressor';
 
 const compressImageHighQuality = async (file: File): Promise<string> => {
@@ -112,6 +113,7 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
   const [showLocDropdown, setShowLocDropdown] = useState(false);
   const [editorMode, setEditorMode] = useState<'write' | 'preview'>('write');
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
+  const [exportModalArticle, setExportModalArticle] = useState<Partial<Article> | null>(null);
 
   // Performance & Custom Toast/Confirm Modal States
   const [isSaving, setIsSaving] = useState(false);
@@ -2189,7 +2191,19 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
             )}
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2.5 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => setExportModalArticle({
+                ...currentArticle,
+                categoryName: getCategoryName(currentArticle.categoryId || currentArticle.category_id || '')
+              })}
+              className="px-4 py-3.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200/80 rounded-xl font-bold text-xs uppercase tracking-wider transition-all shadow-3xs flex items-center gap-1.5"
+              title="Render Kartu Gambar Sosial Media (4:5 / 9:16)"
+            >
+              <Sparkles size={15} className="text-red-600" />
+              <span className="hidden sm:inline">Render Gambar (4:5 / 9:16)</span>
+            </button>
             <button
               onClick={() => handleSave('draft')}
               disabled={isSaving}
@@ -2865,6 +2879,16 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
                     {canEdit(article) && (
                       <>
                         <button 
+                          onClick={() => setExportModalArticle({
+                            ...article,
+                            categoryName: getCategoryName(article.categoryId || article.category_id || '')
+                          })}
+                          className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors flex items-center justify-center"
+                          title="Render Gambar Sosmed (4:5 / 9:16)"
+                        >
+                          <Sparkles size={14} />
+                        </button>
+                        <button 
                           onClick={() => navigate(getStudioRoute('news/edit/' + article.id))} 
                           className="p-1.5 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-md transition-colors flex items-center justify-center" 
                           title="Edit Berita"
@@ -3011,7 +3035,7 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
         currentUser={currentUser}
         defaultTable="articles"
         onRestoreComplete={() => {
-          fetchArticles();
+          loadData();
         }}
       />
 
@@ -3097,6 +3121,15 @@ export default function NewsManager({ currentUser }: { currentUser: User }) {
             </div>
           </div>
         </div>
+      )}
+
+      {/* SOCIAL MEDIA GRAPHIC CARD RENDERER MODAL (4:5 / 9:16) */}
+      {exportModalArticle && (
+        <SocialCardExporterModal
+          isOpen={!!exportModalArticle}
+          onClose={() => setExportModalArticle(null)}
+          article={exportModalArticle}
+        />
       )}
     </div>
   );
