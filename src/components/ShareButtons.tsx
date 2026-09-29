@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Share2, Link as LinkIcon, Check } from 'lucide-react';
+import { Share2, Link as LinkIcon, Check, Sparkles } from 'lucide-react';
 
 interface ShareButtonsProps {
   title: string;
@@ -8,9 +8,10 @@ interface ShareButtonsProps {
   url?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
+  onRenderGraphic?: () => void;
 }
 
-export default function ShareButtons({ title, excerpt, url, className = '' }: ShareButtonsProps) {
+export default function ShareButtons({ title, excerpt, url, className = '', onRenderGraphic }: ShareButtonsProps) {
   const [copied, setCopied] = useState(false);
   const currentUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
 
@@ -152,6 +153,19 @@ export default function ShareButtons({ title, excerpt, url, className = '' }: Sh
           {copied ? 'Disalin' : 'Salin'}
         </span>
       </button>
+
+      {/* Render Graphic Image Button (4:5 / 9:16) */}
+      {onRenderGraphic && (
+        <button
+          type="button"
+          onClick={onRenderGraphic}
+          title="Render Kartu Gambar Sosial Media (4:5 / 9:16)"
+          className="h-8 rounded-full text-xs font-bold bg-gradient-to-r from-red-600 via-rose-600 to-pink-600 text-white hover:from-red-700 hover:to-pink-700 transition-all shadow-sm flex items-center justify-center shrink-0 px-3 gap-1.5 cursor-pointer hover:scale-105 active:scale-95 border border-red-500/30"
+        >
+          <Sparkles size={13} className="text-amber-300 animate-pulse shrink-0" />
+          <span className="text-[11px] font-bold">Render Gambar (4:5 / 9:16)</span>
+        </button>
+      )}
 
       {/* Native Share Button (Lainnya) */}
       {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (

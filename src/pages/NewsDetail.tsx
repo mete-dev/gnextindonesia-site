@@ -20,6 +20,7 @@ import { trackArticleView } from '../lib/tracker';
 import { parseArticleDate, getPopularArticles, getRelatedArticlesBySimilarity } from '../lib/trending';
 import BlurImage from '../components/BlurImage';
 import Breadcrumbs from '../components/Breadcrumbs';
+import { SocialCardExporterModal } from '../components/studio/SocialCardExporterModal';
 
 export default function NewsDetailPage() {
   const { categorySlug, slug } = useParams();
@@ -33,6 +34,7 @@ export default function NewsDetailPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRenderModalOpen, setIsRenderModalOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<{ src: string; caption?: string } | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
 
@@ -617,7 +619,12 @@ export default function NewsDetailPage() {
 
               {/* Share actions header */}
               <div className="flex items-center gap-2">
-                <ShareButtons title={article.title} excerpt={excerptText} coverImage={coverImg} />
+                <ShareButtons 
+                  title={article.title} 
+                  excerpt={excerptText} 
+                  coverImage={coverImg} 
+                  onRenderGraphic={() => setIsRenderModalOpen(true)}
+                />
               </div>
             </div>
           </motion.div>
@@ -1228,6 +1235,19 @@ export default function NewsDetailPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* SOCIAL MEDIA GRAPHIC CARD RENDERER MODAL (4:5 / 9:16) */}
+      {article && (
+        <SocialCardExporterModal
+          isOpen={isRenderModalOpen}
+          onClose={() => setIsRenderModalOpen(false)}
+          article={{
+            ...article,
+            categoryName: categoryName,
+            cover_image: coverImg
+          }}
+        />
       )}
 
       <Footer portal={activePortal} />
