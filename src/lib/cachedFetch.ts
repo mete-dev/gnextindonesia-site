@@ -1,6 +1,7 @@
 import { supabase } from './supabase';
 import { filterValidArticles, slugify } from '../data/news';
 import { parseArticleDate } from './trending';
+import { fetchGNNArticles, fetchGNNArticleDetail } from './gnnApi';
 
 let cachedArticles: any[] | null = null;
 let cachedCategories: any[] | null = null;
@@ -14,10 +15,10 @@ const CACHE_TTL = 300000; // 5 minutes cache for articles list
 const META_CACHE_TTL = 900000; // 15 minutes cache for categories/settings/users
 
 const STORAGE_KEYS = {
-  ARTICLES: 'gnext_cache_articles_v4',
-  CATEGORIES: 'gnext_cache_categories_v4',
-  SETTINGS: 'gnext_cache_settings_v4',
-  TIMESTAMP: 'gnext_cache_time_v4',
+  ARTICLES: 'gnext_cache_articles_v7',
+  CATEGORIES: 'gnext_cache_categories_v7',
+  SETTINGS: 'gnext_cache_settings_v7',
+  TIMESTAMP: 'gnext_cache_time_v7',
 };
 
 // Safe sessionStorage helpers
@@ -180,36 +181,23 @@ export async function fetchPublishedArticlesAndMetadata(forceRefresh: boolean = 
 
   try {
     // 3. Selective query: only valid columns that exist in DB
-    const fetchPromise = Promise.all([
-      supabase
-        .from('articles')
-        .select('id, title, category_id, author_id, status, date, cover_image, views, news_location, portal, sub_category, tags, created_at')
-        .eq('status', 'published')
-        .order('created_at', { ascending: false })
-        .limit(100),
+    const [categoriesRes, settingsRes, gnnArticles] = await Promise.all([
       supabase
         .from('categories')
         .select('id, name, slug, parent_id, created_at'),
       supabase
         .from('web_settings')
-        .select('id, path, title, description, content')
+        .select('id, path, title, description, content'),
+      fetchGNNArticles(50).catch(() => [])
     ]);
 
-    const [articlesRes, categoriesRes, settingsRes] = await fetchPromise;
+    // Artikel sepenuhnya diakses dari Good News Nusantara (GNN)
+    const activeArticles = Array.isArray(gnnArticles) && gnnArticles.length > 0
+      ? gnnArticles
+      : DEFAULT_REAL_ARTICLES;
 
-    let dbArticles: any[] = [];
-    if (articlesRes && articlesRes.error) {
-      console.warn('Database fetch warning, error was:', articlesRes.error);
-      dbArticles = cachedArticles || DEFAULT_REAL_ARTICLES;
-    } else {
-      dbArticles = articlesRes && articlesRes.data && articlesRes.data.length > 0 ? articlesRes.data : [];
-      if (!dbArticles || dbArticles.length === 0) {
-        dbArticles = DEFAULT_REAL_ARTICLES;
-      }
-    }
-
-    if (dbArticles && dbArticles.length > 0) {
-      const valid = filterValidArticles(dbArticles).map((a: any) => ({
+    if (activeArticles && activeArticles.length > 0) {
+      const valid = filterValidArticles(activeArticles).map((a: any) => ({
         ...a,
         categoryId: a.category_id || a.categoryId,
         authorId: a.author_id || a.authorId,
@@ -227,15 +215,31 @@ export async function fetchPublishedArticlesAndMetadata(forceRefresh: boolean = 
       cachedArticles = valid;
       lastFetchTime = now;
 
+      // Automatically construct categories from GNN articles
+      const gnnCatSet = new Map<string, string>();
+      valid.forEach((art: any) => {
+        const catName = art.category_name || art.sub_category || 'Kabar Baik';
+        const catId = art.categoryId || `gnn-cat-${slugify(catName)}`;
+        if (!gnnCatSet.has(catId)) {
+          gnnCatSet.set(catId, catName);
+        }
+      });
+
+      const extractedGnnCats = Array.from(gnnCatSet.entries()).map(([id, name]) => ({
+        id,
+        name,
+        slug: slugify(name),
+        created_at: new Date().toISOString()
+      }));
+
+      cachedCategories = extractedGnnCats.length > 0 ? extractedGnnCats : (categoriesRes?.data || []);
+
       // Save to sessionStorage
       setSessionStorage(STORAGE_KEYS.ARTICLES, valid);
+      setSessionStorage(STORAGE_KEYS.CATEGORIES, cachedCategories);
       setSessionStorage(STORAGE_KEYS.TIMESTAMP, now);
     }
 
-    if (categoriesRes && !categoriesRes.error && categoriesRes.data) {
-      cachedCategories = categoriesRes.data;
-      setSessionStorage(STORAGE_KEYS.CATEGORIES, categoriesRes.data);
-    }
     if (settingsRes && !settingsRes.error && settingsRes.data) {
       cachedSettings = settingsRes.data;
       setSessionStorage(STORAGE_KEYS.SETTINGS, settingsRes.data);
@@ -268,6 +272,15 @@ export async function fetchArticleFullDetail(slugOrId: string): Promise<any | nu
     return ARTICLE_DETAIL_CACHE[cacheKey].data;
   }
 
+  // If ID starts with gnn- or starts with GNN slug, query GNN API directly first
+  if (slugOrId.startsWith('gnn-')) {
+    const gnnDetail = await fetchGNNArticleDetail(slugOrId);
+    if (gnnDetail) {
+      ARTICLE_DETAIL_CACHE[cacheKey] = { data: gnnDetail, timestamp: now };
+      return gnnDetail;
+    }
+  }
+
   try {
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
     
@@ -294,6 +307,15 @@ export async function fetchArticleFullDetail(slugOrId: string): Promise<any | nu
   } catch (e) {
     console.warn('Failed to fetch full article detail:', e);
   }
+
+  // Fallback check against GNN API by slug
+  try {
+    const gnnFallback = await fetchGNNArticleDetail(slugOrId);
+    if (gnnFallback) {
+      ARTICLE_DETAIL_CACHE[cacheKey] = { data: gnnFallback, timestamp: now };
+      return gnnFallback;
+    }
+  } catch (e) {}
 
   return null;
 }

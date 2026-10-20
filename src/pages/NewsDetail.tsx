@@ -21,8 +21,10 @@ import { parseArticleDate, getPopularArticles, getRelatedArticlesBySimilarity } 
 import BlurImage from '../components/BlurImage';
 import Breadcrumbs from '../components/Breadcrumbs';
 import { SocialCardExporterModal } from '../components/studio/SocialCardExporterModal';
+import { useBrand } from '../lib/brandConfig';
 
 export default function NewsDetailPage() {
+  const { brand } = useBrand();
   const { categorySlug, slug } = useParams();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -364,9 +366,9 @@ export default function NewsDetailPage() {
     if (!content) return '';
     let trimmed = content.trim();
 
-    const rawLoc = location && location.trim() ? location.trim() : (portal === 'lumajangtalks' ? 'LUMAJANG' : portal === 'yoikijatim' ? 'JAWA TIMUR' : portal === 'gummah' ? 'UMMAH' : 'NASIONAL');
+    const rawLoc = location && location.trim() ? location.trim() : (portal?.startsWith('lentera') ? portalName.replace(/^Lentera\s*/i, '') : 'NASIONAL');
     const loc = rawLoc.toUpperCase();
-    const pub = portal === 'yoikijatim' ? 'YO IKI JATIM' : portal === 'lumajangtalks' ? 'LUMAJANG TALKS' : portal === 'gummah' ? 'GNEXT UMMAH' : portal === 'finance' ? 'GNEXT FINANCE' : portal?.startsWith('lentera') ? portalName.toUpperCase() : 'GNEXT NEWS';
+    const pub = portal?.startsWith('lentera') ? portalName.toUpperCase() : `${brand.nameUpper} NEWS`;
 
     const datelineMarkdown = `**${loc}, ${pub}** - `;
 

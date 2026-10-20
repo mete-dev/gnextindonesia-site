@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { detectPortal, getPortalById } from '../lib/portals';
 import { supabase } from '../lib/supabase';
 import { PageSetting } from '../pages/studio/types';
+import { getBrandConfig, replaceBrandText } from '../lib/brandConfig';
 
 export interface UsePageMetaProps {
   title?: string;
@@ -68,21 +69,13 @@ const getDefaultDescription = (portalId: string, portalName: string): string => 
 };
 
 const getPortalFavicon = (portalId: string, path: string = ''): string => {
+  const brand = getBrandConfig();
+  if (brand.id === 'haloindonesia' && !portalId.startsWith('lentera')) {
+    return brand.favicon;
+  }
   const pLower = path.toLowerCase();
-  if (portalId === 'finance' || pLower.startsWith('/finance')) {
-    return '/favicon-finance.svg';
-  }
   if (portalId === 'gnext' || pLower.startsWith('/news')) {
-    return '/favicon-gnext.png';
-  }
-  if (portalId === 'yoikijatim' || pLower.startsWith('/yoikijatim')) {
-    return '/favicon-yoiki.png';
-  }
-  if (portalId === 'lumajangtalks' || pLower.startsWith('/lumajangtalks')) {
-    return '/favicon-lumajang.png';
-  }
-  if (portalId === 'gummah' || pLower.startsWith('/gummah') || pLower.startsWith('/ummah')) {
-    return 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23059669" rx="20"/><text x="50%25" y="50%25" font-family="sans-serif" font-weight="900" font-size="55" fill="white" dominant-baseline="central" text-anchor="middle">G</text></svg>';
+    return '/favicon.svg';
   }
   return '/favicon-lentera.svg';
 };
@@ -128,26 +121,30 @@ export function usePageMeta({
   };
 
   const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
+  const brand = getBrandConfig(hostname);
   const detected = detectPortal(hostname, currentPath);
   const activePortal = portalId ? getPortalById(portalId) : (detected || getPortalById('gnext'));
 
-  const siteName = activePortal.name;
+  const siteName = activePortal.id === 'gnext' ? brand.name : activePortal.name;
   const activePortalId = activePortal.id;
 
   // DB setting override should only apply to main corporate site or if specifically matched
   const isCorporateMain = activePortalId === 'gnext' && (!hostname || !hostname.startsWith('news.'));
   const isValidDbSetting = dbSetting && (isCorporateMain || dbSetting.portal_id === activePortalId);
 
-  const defaultDesc = getDefaultDescription(activePortalId, siteName);
-  const finalDescription = (isValidDbSetting ? dbSetting?.description : null) || description || defaultDesc;
+  const defaultDesc = activePortalId === 'gnext' 
+    ? brand.description 
+    : getDefaultDescription(activePortalId, siteName);
+  const rawDescription = (isValidDbSetting ? dbSetting?.description : null) || description || defaultDesc;
+  const finalDescription = replaceBrandText(rawDescription, brand);
 
   let rawTitle = (isValidDbSetting ? dbSetting?.title : null) || title || `${siteName} - Portal Berita & Informasi Terdepan`;
-  let finalTitle = rawTitle;
-  if (title && !rawTitle.includes(siteName) && !rawTitle.includes('|') && rawTitle !== title) {
+  let finalTitle = replaceBrandText(rawTitle, brand);
+  if (title && !finalTitle.includes(siteName) && !finalTitle.includes('|') && finalTitle !== title) {
     finalTitle = `${title} | ${siteName}`;
   }
 
-  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://www.gnextindonesia.site';
+  const siteOrigin = typeof window !== 'undefined' ? window.location.origin : brand.url;
 
   // Calculate cleaner canonical URL mapped to correct subdomain or clean route (removing search params)
   let canonicalUrl = url || '';

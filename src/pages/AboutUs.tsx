@@ -3,8 +3,11 @@ import { motion } from 'motion/react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { SEO } from '../components/SEO';
+import { useBrand } from '../lib/brandConfig';
 
 export default function AboutUs() {
+  const { brand } = useBrand();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -12,8 +15,8 @@ export default function AboutUs() {
   return (
     <div className="min-h-screen bg-neutral-50 text-neutral-900 selection:bg-accent selection:text-neutral-900">
       <SEO 
-        title="About Us" 
-        description="Gnext Indonesia adalah induk media digital dan creative studio yang berdedikasi untuk membangun generasi yang kreatif, adaptif, dan berdampak."
+        title={`About Us | ${brand.name}`} 
+        description={`${brand.name} adalah induk media digital dan jaringan publikasi kreatif yang berdedikasi untuk membangun generasi yang kreatif, adaptif, dan berdampak.`}
         path="/about"
       />
       <Navbar />
@@ -31,7 +34,7 @@ export default function AboutUs() {
               <span className="italic font-light text-neutral-500">Kami</span>
             </h1>
             <p className="text-xl md:text-3xl font-display max-w-4xl leading-snug">
-              Gnext Indonesia adalah induk media digital dan creative studio dibawah naungan Gnext Media Group (PT Gnext Creative Studio).
+              {brand.name} adalah jaringan media digital dan platform kreatif di bawah naungan {brand.legalGroup} ({brand.legalEntity}).
             </p>
           </motion.div>
         </section>
@@ -50,10 +53,10 @@ export default function AboutUs() {
                 Kami lahir dari semangat untuk menjadikan kreativitas sebagai kekuatan yang mampu membawa perubahan, bukan hanya sebagai karya visual, tetapi sebagai kontribusi nyata bagi masyarakat.
               </p>
               <p>
-                Sejak berdiri, Gnext Indonesia berfokus pada pengembangan konten, pelatihan, dan kolaborasi kreatif. Kami mengolah ide, suara, dan gagasan anak muda menjadi karya yang relevan, berdampak, dan memiliki nilai.
+                Sejak berdiri, {brand.name} berfokus pada pengembangan konten, pelatihan, dan kolaborasi kreatif. Kami mengolah ide, suara, dan gagasan anak muda menjadi karya yang relevan, berdampak, dan memiliki nilai.
               </p>
               <p>
-                Kami percaya bahwa setiap individu memiliki potensi kreatif. Melalui pendekatan partisipatif, kolaboratif, dan adaptif terhadap perkembangan media, Gnext Indonesia hadir untuk membangun ekosistem kreatif yang inklusif serta berorientasi pada hasil.
+                Kami percaya bahwa setiap individu memiliki potensi kreatif. Melalui pendekatan partisipatif, kolaboratif, dan adaptif terhadap perkembangan media, {brand.name} hadir untuk membangun ekosistem kreatif yang inklusif serta berorientasi pada hasil.
               </p>
             </motion.div>
             
@@ -147,29 +150,26 @@ export default function AboutUs() {
             </h2>
           </motion.div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex justify-center">
             {[
-              { name: "Mete - Scorpio", role: "Corporate Direction", image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" },
-              { name: "Jane Doe", role: "Creative Director", image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" },
-              { name: "John Smith", role: "Content Strategist", image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" },
-              { name: "Sarah Lee", role: "Art Director", image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" },
+              { name: "Fadhil Al Anshor", role: "Corporate Direction", image: "/fotofadhil.jpeg" },
             ].map((member, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                className="group flex flex-col items-center text-center"
+                transition={{ delay: 0.1 }}
+                className="group flex flex-col items-center text-center max-w-xs sm:max-w-sm w-full"
               >
-                <div className="w-full aspect-square rounded-[2rem] overflow-hidden mb-6 relative bg-neutral-200">
+                <div className="w-full aspect-square rounded-[2rem] overflow-hidden mb-6 relative bg-neutral-200 shadow-sm">
                   <img 
                     src={member.image} 
                     alt={member.name} 
-                    className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 transition-all duration-500 group-hover:scale-105"
                   />
                 </div>
-                <h3 className="text-2xl font-display font-bold mb-1">{member.name}</h3>
+                <h3 className="text-2xl sm:text-3xl font-display font-bold mb-1 text-neutral-900">{member.name}</h3>
                 <p className="text-neutral-500 font-medium uppercase tracking-wider text-sm">{member.role}</p>
               </motion.div>
             ))}

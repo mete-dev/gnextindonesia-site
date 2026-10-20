@@ -2,9 +2,12 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Sparkles, Zap, Flame, Star } from 'lucide-react';
 
+import { useBrand } from '../lib/brandConfig';
+
 export default function Marquee() {
+  const { brand } = useBrand();
   const items = [
-    "Gnext Indonesia",
+    brand.name,
     "Creative",
     "Create",
     "Contribution",

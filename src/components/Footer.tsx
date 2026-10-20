@@ -6,12 +6,14 @@ import { detectPortal, getPortalById } from '../lib/portals';
 import { LenteraLogo } from './LenteraLogo';
 import { supabase } from '../lib/supabase';
 import { PageSetting } from '../pages/studio/types';
+import { useBrand, replaceBrandText } from '../lib/brandConfig';
 
 interface FooterProps {
   portal?: string;
 }
 
 export default function Footer({ portal }: FooterProps) {
+  const { brand } = useBrand();
   const [footerSetting, setFooterSetting] = useState<PageSetting | null>(null);
 
   const hostname = typeof window !== 'undefined' ? window.location.hostname.toLowerCase() : '';
@@ -26,21 +28,9 @@ export default function Footer({ portal }: FooterProps) {
     }
 
     const isNewsDomain = hostname.startsWith('news.') || 
-                          hostname.startsWith('yoikijatim.') || 
-                          hostname.startsWith('lumajangtalks.') || 
-                          hostname.startsWith('gummah.') || 
-                          hostname.startsWith('g-ummah.') || 
-                          hostname.startsWith('ummah.') || 
-                          hostname.startsWith('finance.') || 
                           hostname.startsWith('lentera');
 
     const isNewsPath = pathname.startsWith('/news') || 
-                       pathname.startsWith('/yoikijatim') || 
-                       pathname.startsWith('/lumajangtalks') || 
-                       pathname.startsWith('/gummah') || 
-                       pathname.startsWith('/g-ummah') || 
-                       pathname.startsWith('/ummah') || 
-                       pathname.startsWith('/finance') || 
                        pathname.startsWith('/lentera');
 
     if (isNewsDomain || isNewsPath) {
@@ -81,55 +71,12 @@ export default function Footer({ portal }: FooterProps) {
   const getHomeHref = (p: string) => {
     if (sub) return '/';
     if (p === 'gnext') return '/news';
-    if (p === 'gummah') {
-      if (hostname.toLowerCase().startsWith('gummah.') || hostname.toLowerCase().startsWith('g-ummah.') || hostname.toLowerCase().startsWith('ummah.')) {
-        return '/';
-      }
-      if (pathname.startsWith('/ummah')) return '/ummah';
-      return '/gummah';
-    }
     return `/${p}`;
   };
 
   // Helper for portal specific styling accents while retaining Gnext Indonesia branding
   const getPortalTheme = (p: string) => {
     switch (p) {
-      case 'yoikijatim':
-        return {
-          accentText: 'text-orange-500',
-          hoverAccentText: 'hover:text-orange-500',
-          borderTop: 'border-orange-900/30',
-          buttonBg: 'bg-orange-600',
-          buttonHoverBg: 'hover:bg-orange-700',
-          badgeDot: 'bg-orange-500'
-        };
-      case 'gummah':
-        return {
-          accentText: 'text-emerald-500',
-          hoverAccentText: 'hover:text-emerald-500',
-          borderTop: 'border-emerald-900/30',
-          buttonBg: 'bg-emerald-600',
-          buttonHoverBg: 'hover:bg-emerald-700',
-          badgeDot: 'bg-emerald-500'
-        };
-      case 'lumajangtalks':
-        return {
-          accentText: 'text-lumajang-400',
-          hoverAccentText: 'hover:text-lumajang-400',
-          borderTop: 'border-lumajang-900/30',
-          buttonBg: 'bg-orange-600',
-          buttonHoverBg: 'hover:bg-orange-700',
-          badgeDot: 'bg-lumajang-400'
-        };
-      case 'finance':
-        return {
-          accentText: 'text-finance-500',
-          hoverAccentText: 'hover:text-finance-500',
-          borderTop: 'border-finance-900/30',
-          buttonBg: 'bg-finance-600',
-          buttonHoverBg: 'hover:bg-finance-700',
-          badgeDot: 'bg-finance-500'
-        };
       default:
         if (p.startsWith('lentera')) {
           return {
@@ -170,10 +117,10 @@ export default function Footer({ portal }: FooterProps) {
                 <span className="italic font-light text-neutral-700">bersama.</span>
               </motion.h2>
               <a 
-                href="mailto:halo@gnextindonesia.site"
+                href={`mailto:${brand.editorialContact}`}
                 className="inline-block text-2xl md:text-4xl font-medium border-b-2 border-neutral-900 pb-2 hover:text-neutral-600 hover:border-neutral-600 transition-colors"
               >
-                halo@gnextindonesia.site
+                {brand.editorialContact}
               </a>
             </div>
             
@@ -200,7 +147,7 @@ export default function Footer({ portal }: FooterProps) {
           </div>
 
           <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-neutral-900/20 text-sm font-medium">
-            <p>© {new Date().getFullYear()} Gnext Creative Studio. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} {brand.nameUpper}. All rights reserved.</p>
             <div className="flex gap-6 mt-4 md:mt-0">
               <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
               <Link to="/terms" className="hover:underline">Terms of Service</Link>
@@ -216,8 +163,9 @@ export default function Footer({ portal }: FooterProps) {
   const homeHref = getHomeHref(activePortal);
   const baseNav = homeHref === '/' ? '' : homeHref;
 
-  const footerDescription = footerSetting?.description || 
-    'Portal berita resmi dan jaringan media digital terpercaya di bawah naungan GNEXT INDONESIA, menyajikan berita nasional, informasi daerah, bisnis, teknologi, dan inovasi publik secara akurat, berimbang, dan independen.';
+  const footerDescription = footerSetting?.description 
+    ? replaceBrandText(footerSetting.description, brand)
+    : `Portal berita resmi dan jaringan media digital terpercaya di bawah naungan ${brand.nameUpper}, menyajikan berita nasional, informasi daerah, bisnis, teknologi, dan inovasi publik secara akurat, berimbang, dan independen.`;
 
   return (
     <footer className={`bg-neutral-950 text-white pt-16 pb-8 border-t ${theme.borderTop} relative z-20`}>
@@ -228,7 +176,11 @@ export default function Footer({ portal }: FooterProps) {
             <Link to={homeHref} className="flex flex-col justify-center mb-4 text-white leading-none group">
               <div className="text-xl sm:text-2xl font-display font-black tracking-tighter uppercase leading-none">
                 <span className="font-serif italic font-black tracking-normal text-white">
-                  GNEXT <span className={`${theme.accentText} font-sans not-italic font-black`}>INDONESIA</span>
+                  {brand.id === 'haloindonesia' ? (
+                    <>HALO <span className={`${theme.accentText} font-sans not-italic font-black`}>INDONESIA</span></>
+                  ) : (
+                    <>GNEXT <span className={`${theme.accentText} font-sans not-italic font-black`}>INDONESIA</span></>
+                  )}
                 </span>
               </div>
               <div className="w-[155px] sm:w-[178px] text-[9.5px] tracking-tight text-neutral-400 uppercase font-sans font-bold mt-1 flex justify-between">
@@ -307,27 +259,27 @@ export default function Footer({ portal }: FooterProps) {
                 </Link></li>
               <li>
                 <Link to="/about" className={`${theme.hoverAccentText} transition-colors`}>
-                  Tentang Gnext Indonesia
+                  Tentang {brand.name}
                 </Link>
               </li>
             </ul>
           </div>
           
-          {/* Hubungi Redaksi Gnext Indonesia */}
+          {/* Hubungi Redaksi */}
           <div className="md:col-span-4">
             <h4 className="font-display font-bold text-sm uppercase tracking-wider text-neutral-300 mb-6">
-              Hubungi Redaksi Gnext Indonesia
+              Hubungi Redaksi {brand.name}
             </h4>
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-              Punya aspirasi, opini, rilis pers, atau informasi liputan? Kirimkan tulisan Anda langsung ke tim redaksi pusat GNEXT INDONESIA.
+              Punya aspirasi, opini, rilis pers, atau informasi liputan? Kirimkan tulisan Anda langsung ke tim redaksi pusat {brand.nameUpper}.
             </p>
             <div className="flex flex-col gap-2.5 text-sm text-neutral-400">
               <a 
-                href="mailto:info.gnextindonesia@gmail.com" 
+                href={`mailto:${brand.editorialContact}`} 
                 className={`flex items-center gap-2 ${theme.hoverAccentText} transition-colors`}
               >
                 <Mail size={16} className={theme.accentText} />
-                <span>info.gnextindonesia@gmail.com</span>
+                <span>{brand.editorialContact}</span>
               </a>
               <div className="flex items-center gap-2">
                 <Phone size={16} className={theme.accentText} />
@@ -347,7 +299,7 @@ export default function Footer({ portal }: FooterProps) {
 
         {/* Copyright Bar */}
         <div className="flex flex-col sm:flex-row justify-between items-center pt-8 border-t border-neutral-900 text-xs text-neutral-500">
-          <p>© {new Date().getFullYear()} GNEXT INDONESIA. Suara Publik Indonesia. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} {brand.nameUpper}. Suara Publik Indonesia. All rights reserved.</p>
           <div className="flex flex-wrap gap-6 mt-4 sm:mt-0">
             <Link to="/about" className="hover:text-neutral-300 transition-colors">Tentang Kami</Link>
             <Link to={sub ? "/privacy" : "/news/privacy"} className="hover:text-neutral-300 transition-colors">Kebijakan Privasi</Link>

@@ -585,10 +585,6 @@ export default function UserManager({ currentUser }: { currentUser: User }) {
               >
                 <optgroup label="Portal Utama & Regional">
                   <option value="gnext">GNEXT NEWS (Nasional)</option>
-                  <option value="gummah">GNEXT UMMAH (Syariah & Islami)</option>
-                  <option value="finance">GNEXT FINANCE (Ekonomi & Bisnis)</option>
-                  <option value="yoikijatim">YO IKI JATIM (Jawa Timur)</option>
-                  <option value="lumajangtalks">LUMAJANG TALKS (Lumajang)</option>
                 </optgroup>
                 <optgroup label="Jaringan Lentera (Nasional & Daerah)">
                   {ALL_PORTALS.filter(p => p.id.startsWith('lentera')).map(p => (
@@ -737,10 +733,6 @@ export default function UserManager({ currentUser }: { currentUser: User }) {
           >
             <option value="ALL">Semua Portal</option>
             <option value="gnext">GNEXT NEWS</option>
-            <option value="yoikijatim">YO IKI JATIM</option>
-            <option value="lumajangtalks">LUMAJANG TALKS</option>
-            <option value="gummah">GNEXT UMMAH</option>
-            <option value="finance">GNEXT FINANCE</option>
             {ALL_PORTALS.filter(p => p.id.startsWith('lentera')).map(p => (
               <option key={p.id} value={p.id}>{p.name}</option>
             ))}

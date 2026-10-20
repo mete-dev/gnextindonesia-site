@@ -1,21 +1,20 @@
 import React from 'react';
 import { Radio, Globe } from 'lucide-react';
 
+import { getBrandConfig } from '../lib/brandConfig';
+
 interface StartupLoaderProps {
   portalName?: string;
   subdomain?: string | null;
 }
 
 export const StartupLoader: React.FC<StartupLoaderProps> = ({ portalName, subdomain }) => {
+  const brand = getBrandConfig();
   const getSubdomainLabel = () => {
-    if (subdomain === 'studio') return 'Gnext Studio Redaksi';
-    if (subdomain === 'yoikijatim') return 'YO IKI JATIM';
-    if (subdomain === 'lumajangtalks') return 'LUMAJANG TALKS';
-    if (subdomain === 'gummah') return 'GNEXT UMMAH';
-    if (subdomain === 'finance') return 'GNEXT FINANCE';
+    if (subdomain === 'studio') return `${brand.shortName} Studio Redaksi`;
     if (subdomain === 'lentera') return 'LENTERA NUSANTARA';
-    if (subdomain === 'news') return 'GNEXT NEWSROOM';
-    return portalName || 'GNEXT INDONESIA';
+    if (subdomain === 'news') return `${brand.nameUpper} NEWSROOM`;
+    return portalName || brand.nameUpper;
   };
 
   return (

@@ -24,13 +24,20 @@ export default function News() {
     fetchData();
   }, []);
 
-  const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || 'Unknown';
+  const getCategoryName = (id: string, art?: any) => {
+    if (art?.category_name) return art.category_name;
+    if (art?.category) return art.category;
+    if (art?.sub_category) return art.sub_category;
+    const found = categories.find(c => c.id === id || c.slug === id);
+    if (found?.name) return found.name;
+    return 'Kabar Baik';
+  };
 
   const mappedArticles = articles.map(a => ({
     id: a.id,
     title: a.title,
-    categoryId: a.category_id,
-    category: getCategoryName(a.category_id),
+    categoryId: a.category_id || a.categoryId,
+    category: getCategoryName(a.category_id || a.categoryId, a),
     date: a.date,
     image: a.cover_image || 'https://images.unsplash.com/photo-1432828684207-6b4510008518?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
   }));

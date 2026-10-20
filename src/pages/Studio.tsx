@@ -2,11 +2,12 @@ import ErrorBoundary from '../components/ErrorBoundary';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Settings, FileText, LogOut, Tags, Users, Activity, Briefcase, Users2, Menu, X, BarChart2, Image as ImageIcon, Database, Globe, Sliders } from 'lucide-react';
+import { Settings, FileText, LogOut, Tags, Users, Activity, Briefcase, Users2, Menu, X, BarChart2, Image as ImageIcon, Database, Globe, Sliders, Radio } from 'lucide-react';
 import { User } from './studio/types';
 import NewsManager from './studio/NewsManager';
 import CategoryManager from './studio/CategoryManager';
 import GalleryManager from './studio/GalleryManager';
+import GnnFeedViewer from './studio/GnnFeedViewer';
 import WebSettings from './studio/WebSettings';
 import UserManager from './studio/UserManager';
 import AuditLogs from './studio/AuditLogs';
@@ -19,7 +20,7 @@ export default function Studio() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const getTabFromPath = (pathname: string): 'news' | 'categories' | 'gallery' | 'settings' | 'users' | 'audit' | 'works' | 'partners' | 'backup' | 'seo' => {
+  const getTabFromPath = (pathname: string): 'feed' | 'news' | 'categories' | 'gallery' | 'settings' | 'users' | 'audit' | 'works' | 'partners' | 'backup' | 'seo' => {
     const cleanPath = pathname.toLowerCase().replace(/\/$/, '');
     if (cleanPath.endsWith('/categories')) return 'categories';
     if (cleanPath.endsWith('/works')) return 'works';
@@ -30,7 +31,8 @@ export default function Studio() {
     if (cleanPath.endsWith('/users')) return 'users';
     if (cleanPath.endsWith('/audit')) return 'audit';
     if (cleanPath.endsWith('/gallery')) return 'gallery';
-    return 'news';
+    if (cleanPath.endsWith('/feed')) return 'feed';
+    return 'feed';
   };
 
   const activeTab = getTabFromPath(location.pathname);
@@ -64,7 +66,7 @@ export default function Studio() {
       setWebsiteOpen(true);
       setBloggerOpen(false);
       setSettingsOpen(false);
-    } else if (['news', 'categories', 'gallery'].includes(activeTab)) {
+    } else if (['feed', 'news', 'categories', 'gallery'].includes(activeTab)) {
       setBloggerOpen(true);
       setWebsiteOpen(false);
       setSettingsOpen(false);
@@ -78,12 +80,14 @@ export default function Studio() {
 
   if (!currentUser) return null;
 
-  const selectTab = (tab: 'news' | 'categories' | 'gallery' | 'settings' | 'users' | 'audit' | 'works' | 'partners' | 'backup' | 'seo') => {
+  const isAdmin = currentUser.role?.toLowerCase() === 'admin' || currentUser.role?.toLowerCase() === 'administrator';
+
+  const selectTab = (tab: 'feed' | 'news' | 'categories' | 'gallery' | 'settings' | 'users' | 'audit' | 'works' | 'partners' | 'backup' | 'seo') => {
     const isStudioSubdomain = typeof window !== 'undefined' && window.location.hostname.toLowerCase().startsWith('studio.');
     
     let targetPath = '/studio';
     if (isStudioSubdomain && !location.pathname.startsWith('/studio')) {
-      targetPath = tab === 'news' ? '/' : `/${tab}`;
+      targetPath = tab === 'feed' ? '/' : `/${tab}`;
     } else {
       targetPath = `/studio/${tab}`;
     }
@@ -93,6 +97,7 @@ export default function Studio() {
   };
 
   const tabLabels: Record<string, string> = {
+    feed: 'Live Feed GNN',
     news: 'Blog & News',
     categories: 'Kategori News',
     gallery: 'Galeri Media',
@@ -135,7 +140,7 @@ export default function Studio() {
             {currentUser.role}
           </span>
           <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase border ${
-            currentUser.role === 'Administrator'
+            isAdmin
               ? 'bg-neutral-900 text-white border-neutral-950'
               : currentUser.portal === 'yoikijatim'
               ? 'bg-orange-50 text-orange-600 border-orange-200'
@@ -147,7 +152,7 @@ export default function Studio() {
               ? 'bg-amber-50 text-amber-800 border-amber-200'
               : 'bg-red-50 text-red-600 border-red-200'
           }`}>
-            {currentUser.role === 'Administrator' ? 'SEMUA' : getPortalById(currentUser.portal || 'gnext').name.toUpperCase()}
+            {isAdmin ? 'SEMUA' : getPortalById(currentUser.portal || 'gnext').name.toUpperCase()}
           </span>
         </div>
       </header>
@@ -214,26 +219,14 @@ export default function Studio() {
             {bloggerOpen && (
               <div className="pl-2 space-y-0.5 border-l-2 border-neutral-200 ml-4 my-1">
                 <button
-                  onClick={() => selectTab('news')}
+                  onClick={() => selectTab('feed')}
                   className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-all text-xs ${
-                    activeTab === 'news' ? 'bg-neutral-900 text-white font-semibold shadow-xs' : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/90 font-medium'
+                    activeTab === 'feed' ? 'bg-neutral-900 text-white font-semibold shadow-xs' : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/90 font-medium'
                   }`}
                 >
-                  <FileText size={14} />
-                  <span>Artikel Berita</span>
+                  <Radio size={14} className="text-emerald-500 animate-pulse" />
+                  <span>Feed GNN</span>
                 </button>
-
-                {(currentUser.role === 'Administrator' || currentUser.role === 'Manajer Pers') && (
-                  <button
-                    onClick={() => selectTab('categories')}
-                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-all text-xs ${
-                      activeTab === 'categories' ? 'bg-neutral-900 text-white font-semibold shadow-xs' : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/90 font-medium'
-                    }`}
-                  >
-                    <Tags size={14} />
-                    <span>Kategori</span>
-                  </button>
-                )}
 
                 <button
                   onClick={() => selectTab('gallery')}
@@ -249,7 +242,7 @@ export default function Studio() {
           </div>
 
           {/* Website Menu with Submenus */}
-          {currentUser.role === 'Administrator' && (
+          {isAdmin && (
             <div className="space-y-0.5">
               <button
                 onClick={() => {
@@ -297,7 +290,7 @@ export default function Studio() {
           )}
 
           {/* SDM Menu */}
-          {currentUser.role === 'Administrator' && (
+          {isAdmin && (
             <button
               onClick={() => selectTab('users')}
               className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg transition-all text-xs font-semibold ${
@@ -310,7 +303,7 @@ export default function Studio() {
           )}
 
           {/* Settings Menu with Submenus (auditlogs, Backup & Restore, SEO & sitemaps) */}
-          {currentUser.role === 'Administrator' && (
+          {isAdmin && (
             <div className="space-y-0.5">
               <button
                 onClick={() => {
@@ -393,7 +386,7 @@ export default function Studio() {
                   {currentUser.name}
                 </p>
                 <p className="text-[10px] text-neutral-500 truncate leading-tight mt-0.5 font-medium">
-                  {currentUser.role === 'Administrator' ? 'Administrator' : getPortalById(currentUser.portal || 'gnext').name}
+                  {isAdmin ? 'Administrator' : getPortalById(currentUser.portal || 'gnext').name}
                 </p>
               </div>
             </div>
@@ -401,7 +394,7 @@ export default function Studio() {
             <button
               onClick={handleLogout}
               title="Keluar dari Studio"
-              className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all shrink-0 flex items-center justify-center"
+              className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all shrink-0 flex items-center justify-center cursor-pointer"
             >
               <LogOut size={16} />
             </button>
@@ -410,16 +403,15 @@ export default function Studio() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 min-w-0 overflow-x-auto p-2 sm:p-2.5 md:p-3">
+      <main className="flex-1 min-w-0 overflow-x-auto p-3 sm:p-4 md:p-6">
         <motion.div
           key={activeTab}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.3 }}
           className="w-full max-w-full"
         >
-          {activeTab === 'news' && <NewsManager currentUser={currentUser} />}
-          {activeTab === 'categories' && <CategoryManager currentUser={currentUser} />}
+          {activeTab === 'feed' && <GnnFeedViewer currentUser={currentUser} />}
           {activeTab === 'gallery' && <GalleryManager currentUser={currentUser} />}
           {activeTab === 'works' && <WorkManager currentUser={currentUser} />}
           {activeTab === 'partners' && <PartnerManager currentUser={currentUser} />}

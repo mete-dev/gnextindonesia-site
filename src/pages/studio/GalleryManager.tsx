@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 import { User as UserType } from './types';
 import { getPortalById, lenteraNetworks } from '../../lib/portals';
 
+import { fetchPublishedArticlesAndMetadata } from '../../lib/cachedFetch';
+
 interface GalleryItem {
   cover_image: string;
   image_caption: string;
@@ -31,50 +33,59 @@ export default function GalleryManager({ currentUser }: { currentUser: UserType 
   const loadGallery = async () => {
     setLoading(true);
     try {
-      // Fetch articles with covers
-      const { data, error } = await supabase
-        .from('articles')
-        .select('*')
-        .not('cover_image', 'is', null)
-        .order('date', { ascending: false });
+      // 1. Fetch articles from GNN feed and cached articles
+      const meta = await fetchPublishedArticlesAndMetadata();
+      const allArticles: any[] = [...(meta?.articles || [])];
 
-      if (error) throw error;
+      // 2. Fetch extra from Supabase if any
+      try {
+        const { data } = await supabase
+          .from('articles')
+          .select('*')
+          .not('cover_image', 'is', null)
+          .order('date', { ascending: false });
 
-      if (data) {
-        // Group by unique cover_image
-        const grouped: Record<string, GalleryItem> = {};
-        
-        data.forEach((article: any) => {
-          const imgUrl = article.cover_image;
-          if (!imgUrl || imgUrl.trim() === '') return;
-
-          // Normalize
-          const caption = article.image_caption || '';
-          const credit = article.image_credit || '';
-          const portal = article.portal || 'gnext';
-
-          if (!grouped[imgUrl]) {
-            grouped[imgUrl] = {
-              cover_image: imgUrl,
-              image_caption: caption || 'Foto Berita Tanpa Keterangan',
-              image_credit: credit || 'Tidak ada kredit foto',
-              articles: []
-            };
-          }
-
-          // Push article reference
-          grouped[imgUrl].articles.push({
-            id: article.id,
-            title: article.title,
-            date: article.date,
-            portal: portal
+        if (data && data.length > 0) {
+          data.forEach((article: any) => {
+            if (!allArticles.some(a => a.id === article.id)) {
+              allArticles.push(article);
+            }
           });
-        });
+        }
+      } catch (e) {}
 
-        // Convert to array
-        const galleryArray = Object.values(grouped);
-        setItems(galleryArray);
-      }
+      // Group by unique cover_image
+      const grouped: Record<string, GalleryItem> = {};
+      
+      allArticles.forEach((article: any) => {
+        const imgUrl = article.cover_image || article.image;
+        if (!imgUrl || imgUrl.trim() === '') return;
+
+        const caption = article.image_caption || article.caption || article.title || '';
+        const credit = article.image_credit || 'Dokumentasi Redaksi';
+        const portal = article.portal || 'gnext';
+
+        if (!grouped[imgUrl]) {
+          grouped[imgUrl] = {
+            cover_image: imgUrl,
+            image_caption: caption || 'Foto Berita Tanpa Keterangan',
+            image_credit: credit || 'Tidak ada kredit foto',
+            articles: []
+          };
+        }
+
+        // Push article reference
+        grouped[imgUrl].articles.push({
+          id: article.id,
+          title: article.title,
+          date: article.date,
+          portal: portal
+        });
+      });
+
+      // Convert to array
+      const galleryArray = Object.values(grouped);
+      setItems(galleryArray);
     } catch (err) {
       console.error('Gagal mengambil histori galeri cover:', err);
     } finally {
@@ -160,8 +171,6 @@ export default function GalleryManager({ currentUser }: { currentUser: UserType 
           >
             <option value="all">Semua Portal Wilayah</option>
             <option value="gnext">GNEXT NEWS (Nasional)</option>
-            <option value="yoikijatim">YO IKI JATIM</option>
-            <option value="lumajangtalks">LUMAJANG TALKS</option>
             {lenteraNetworks.map(net => (
               <option key={net.id} value={net.id}>
                 {net.name}

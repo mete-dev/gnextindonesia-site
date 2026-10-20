@@ -1,7 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { useBrand } from '../lib/brandConfig';
 
 export default function About() {
+  const { brand } = useBrand();
+
   return (
     <section id="about" className="min-h-[100dvh] py-24 md:py-32 flex items-center bg-neutral-900 text-neutral-50 overflow-hidden">
       <div className="w-full max-w-7xl mx-auto px-6 md:px-12">
@@ -15,7 +18,7 @@ export default function About() {
             transition={{ duration: 0.8 }}
             className="flex flex-col gap-6"
           >
-            <h2 className="text-sm font-medium tracking-widest uppercase text-accent">About Gnext</h2>
+            <h2 className="text-sm font-medium tracking-widest uppercase text-accent">About {brand.name}</h2>
 
             <h3 className="text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.08] tracking-tight">
               Where Creativity Becomes <br/>

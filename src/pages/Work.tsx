@@ -7,6 +7,7 @@ import { SEO } from '../components/SEO';
 import { Instagram, Heart, MessageCircle, Send, Bookmark, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Work, Partner } from './studio/types';
+import { useBrand } from '../lib/brandConfig';
 
 const formatIgEmbedUrl = (url: string) => {
   try {
@@ -28,6 +29,7 @@ const getIgShortcode = (url: string) => {
 };
 
 const InstagramWorkCard = ({ work, index }: { work: Work; index: number }) => {
+  const { brand } = useBrand();
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const embedUrl = formatIgEmbedUrl(work.instagram_url);
@@ -74,8 +76,8 @@ const InstagramWorkCard = ({ work, index }: { work: Work; index: number }) => {
         </div>
 
         <div className="flex items-center justify-between text-neutral-400 text-[11px] pt-3 border-t border-neutral-800">
-          <span>Gnext Catalog</span>
-          <span className="text-accent font-medium">www.gnextindonesia.site</span>
+          <span>{brand.name} Catalog</span>
+          <span className="text-accent font-medium">{brand.domain}</span>
         </div>
       </div>
 

@@ -185,9 +185,10 @@ export default function NewsPage() {
   const [activeFokus, setActiveFokus] = useState<FokusTopic | null>(null);
   const [popularTab, setPopularTab] = useState<'harian' | 'mingguan'>('harian');
 
-  // Filtered lists
-  const defaultCategoryNames = ['Semua', 'Teknologi', 'Kreatif & Media', 'Hukum', 'Ekonomi & Bisnis', 'Pendidikan', 'Lingkungan', 'Gaya Hidup & Budaya', 'G-Ummah', 'Gnext Finance'];
-  const dbCategoryNames = categories.map((c) => c.name);
+  const defaultCategoryNames = ['Semua', 'Teknologi', 'Kreatif & Media', 'Hukum', 'Ekonomi & Bisnis', 'Pendidikan', 'Lingkungan', 'Gaya Hidup & Budaya'];
+  const dbCategoryNames = categories
+    .map((c) => c.name)
+    .filter((n) => !['G-Ummah', 'Gummah', 'Ummah', 'Gnext Finance', 'Finance', 'Yo Iki Jatim', 'Lumajang Talks'].includes(n));
   const categoryNames = Array.from(new Set([...defaultCategoryNames, ...dbCategoryNames]));
 
   useEffect(() => {
@@ -382,33 +383,43 @@ export default function NewsPage() {
     }
   };
 
-  const getCategoryName = (catId: string) => {
-    if (!catId) return 'Umum';
+  const getCategoryName = (catIdOrArticle: any) => {
+    if (!catIdOrArticle) return 'Kabar Baik';
+    if (typeof catIdOrArticle === 'object') {
+      if (catIdOrArticle.category_name) return catIdOrArticle.category_name;
+      if (catIdOrArticle.category) return catIdOrArticle.category;
+      if (catIdOrArticle.sub_category) return catIdOrArticle.sub_category;
+      catIdOrArticle = catIdOrArticle.categoryId || catIdOrArticle.category_id || '';
+    }
+
+    const catId = String(catIdOrArticle || '');
+    if (!catId || catId.toLowerCase() === 'unknown') return 'Kabar Baik';
+
     const found = categories.find(
       (c) => c.id === catId || c.name.toLowerCase() === catId.toLowerCase() || c.slug === catId.toLowerCase()
     );
     if (found) return found.name;
 
     const lowerId = catId.toLowerCase();
+    if (lowerId.includes('saintek')) return 'Saintek';
+    if (lowerId.includes('lingkungan')) return 'Lingkungan';
+    if (lowerId.includes('ekonomi') || lowerId.includes('bisnis') || lowerId.includes('keuangan')) return 'Ekonomi';
+    if (lowerId.includes('pariwisata') || lowerId.includes('wisata')) return 'Pariwisata';
     if (lowerId.includes('pendidikan')) return 'Pendidikan';
     if (lowerId.includes('hukum')) return 'Hukum';
-    if (lowerId.includes('lingkungan')) return 'Lingkungan';
     if (lowerId.includes('teknologi')) return 'Teknologi';
-    if (lowerId.includes('ekonomi') || lowerId.includes('bisnis') || lowerId.includes('keuangan')) return 'Ekonomi & Bisnis';
     if (lowerId.includes('kreatif') || lowerId.includes('media')) return 'Kreatif & Media';
-    if (lowerId.includes('budaya') || lowerId.includes('wisata')) return 'Gaya Hidup & Budaya';
+    if (lowerId.includes('budaya')) return 'Budaya';
     if (lowerId.includes('sosial')) return 'Sosial';
     if (lowerId.includes('ummah') || lowerId.includes('islam')) return 'Ummah';
+    if (lowerId.includes('indonesiana') || lowerId.includes('nusantara')) return 'Nusantara';
+    if (lowerId.includes('kabar')) return 'Kabar Baik';
 
-    if (catId.includes('fallback-0')) return 'Ekonomi & Bisnis';
-    if (catId.includes('fallback-1')) return 'Kreatif & Media';
-    if (catId.includes('fallback-2')) return 'Teknologi';
-
-    // If catId is raw UUID string like '0291476b-3963-4cf1...', return default category name instead of raw UUID
+    // If catId is raw UUID string, return default category name instead of raw UUID
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catId);
-    if (isUuid) return 'Nasional';
+    if (isUuid) return 'Kabar Baik';
 
-    return catId.charAt(0).toUpperCase() + catId.slice(1);
+    return catId.replace(/^gnn-cat-/, '').split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   };
 
   const DEFAULT_COVER = 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1200&q=80';
@@ -475,29 +486,10 @@ export default function NewsPage() {
       const aTitle = a.title.toLowerCase();
       const aContent = (a.content || '').toLowerCase();
 
-      const isUmmahParent = activeLower === 'g-ummah' || activeLower === 'gummah' || activeLower === 'ummah';
-      const isFinanceParent = activeLower === 'gnext finance' || activeLower === 'finance';
-      const isUmmahSub = ['kabar ummah', 'islam global', 'kalam & opini', 'ekonomi syariah', 'ziswaf', 'halal lifestyle', 'inspirasi muslim'].includes(activeLower);
-      const isFinanceSub = ['kabar fiskal', 'perbankan & fintech', 'bursa & emiten', 'aset alternatif', 'dapur bisnis', 'sentra umkm', 'cerdas finansial'].includes(activeLower);
-
-      if (isUmmahParent) {
-        matchesCat = aPortal === 'gummah' || (catLower.length > 0 && (catLower.includes('ummah') || catLower.includes('islam')));
-      } else if (isFinanceParent) {
-        matchesCat = aPortal === 'finance' || (catLower.length > 0 && (catLower.includes('ekonomi') || catLower.includes('finansial') || catLower.includes('bisnis')));
-      } else if (isUmmahSub) {
-        matchesCat = (aPortal === 'gummah' && ((aSubCat.length > 0 && aSubCat.includes(activeLower)) || aTitle.includes(activeLower) || aContent.includes(activeLower))) ||
-                     (aSubCat.length > 0 && aSubCat.includes(activeLower)) ||
-                     (catLower.length > 0 && catLower.includes(activeLower));
-      } else if (isFinanceSub) {
-        matchesCat = (aPortal === 'finance' && ((aSubCat.length > 0 && aSubCat.includes(activeLower)) || aTitle.includes(activeLower) || aContent.includes(activeLower))) ||
-                     (aSubCat.length > 0 && aSubCat.includes(activeLower)) ||
-                     (catLower.length > 0 && catLower.includes(activeLower));
-      } else {
-        matchesCat =
-          (catLower.length > 0 && activeLower.length > 0 && (catLower === activeLower || catLower.includes(activeLower) || activeLower.includes(catLower))) ||
-          (catSlug.length > 0 && activeSlug.length > 0 && (catSlug === activeSlug || catSlug.includes(activeSlug) || activeSlug.includes(catSlug))) ||
-          (aSubCat.length > 0 && activeLower.length > 0 && (aSubCat.includes(activeLower) || activeLower.includes(aSubCat)));
-      }
+      matchesCat =
+        (catLower.length > 0 && activeLower.length > 0 && (catLower === activeLower || catLower.includes(activeLower) || activeLower.includes(catLower))) ||
+        (catSlug.length > 0 && activeSlug.length > 0 && (catSlug === activeSlug || catSlug.includes(activeSlug) || activeSlug.includes(catSlug))) ||
+        (aSubCat.length > 0 && activeLower.length > 0 && (aSubCat.includes(activeLower) || activeLower.includes(aSubCat)));
     }
 
     const matchesSearch =
@@ -581,26 +573,47 @@ export default function NewsPage() {
   }, ['gnext']);
 
   return (
-    <div className="min-h-screen bg-neutral-100 text-neutral-900 font-sans selection:bg-red-600 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans selection:bg-neutral-900 selection:text-white overflow-x-hidden">
       <SEO
         title="GNEXT NEWS - Portal Berita Kreatif & Ekonomi Nusantara"
         description="Portal berita terkini seputar industri kreatif, ekonomi digital, teknologi, dan budaya muda Indonesia."
         path="/news"
       />
-      <Navbar 
-        portal="gnext" 
-        searchQuery={searchQuery} 
-        onSearchChange={setSearchQuery} 
-        categories={categoryNames}
-        activeCategory={activeCategory}
-        onSelectCategory={handleCategoryClick}
-        tickerArticles={articles.length > 0 ? getLatestTickerArticles(articles, 5) : []}
-        todayFormatted={todayFormatted}
-        getCategoryName={getCategoryName}
-        getBasePath={getBasePath}
-      />
+      <Navbar />
 
-      <main className="pt-24 md:pt-26 pb-16">
+      {/* RUNNING TEXT (TICKER) KHUSUS PAGE NEWS */}
+      <div className="pt-20 sm:pt-24 border-b border-neutral-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-30 shadow-3xs">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 h-9 sm:h-10 flex items-center overflow-hidden">
+          {/* Ticker Badge */}
+          <div className="flex items-center gap-2 bg-neutral-900 text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2.5 sm:px-3 py-1 rounded-full shrink-0 mr-3.5 shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+            <span>Kabar Terkini</span>
+          </div>
+
+          {/* Marquee Articles */}
+          <div className="flex-1 overflow-hidden relative text-xs text-neutral-800">
+            {articles.length > 0 ? (
+              <div className="whitespace-nowrap inline-block animate-marquee hover:[animation-play-state:paused]">
+                {[...articles.slice(0, 10), ...articles.slice(0, 10), ...articles.slice(0, 10)].map((a, i) => (
+                  <span key={`${a.id || 'ticker'}-${i}`} className="inline-flex items-center mx-3.5">
+                    <Link
+                      to={`${getBasePath()}/${slugify(getCategoryName(a))}/${slugify(a.title)}`}
+                      className="hover:text-red-600 transition-colors text-neutral-800 font-medium hover:underline text-[11px] sm:text-xs"
+                    >
+                      {a.title}
+                    </Link>
+                    <span className="ml-3.5 text-neutral-300 select-none">•</span>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <span className="text-neutral-400 text-xs">Menyajikan berita dan wawasan terkini nusantara...</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <main className="pt-6 sm:pt-8 pb-16">
 
         {loading ? (
           <NewsFeedSkeleton portal="gnext" />
@@ -616,82 +629,82 @@ export default function NewsPage() {
                   {/* LEFT PRIMARY BLOCK (8 Cols) - Auto flush height matching right column */}
                   <div className="lg:col-span-8 flex flex-col justify-between gap-3.5 h-full">
                     
-                    {/* Main Hero Article Card - Slightly enlarged image and refined spacious typography */}
+                    {/* Main Hero Article Card - Modern minimalist card matching homepage */}
                     <Link
-                      to={`${getBasePath()}/${slugify(getCategoryName(heroMain.categoryId))}/${slugify(heroMain.title)}`}
-                      className="group bg-white p-4 sm:p-5 md:p-6 rounded-2xl border border-neutral-200/90 shadow-2xs hover:shadow-md hover:border-red-400 transition-all duration-300 flex items-center justify-between gap-4 sm:gap-6 flex-1 min-h-[170px]"
+                      to={`${getBasePath()}/${slugify(getCategoryName(heroMain))}/${slugify(heroMain.title)}`}
+                      className="group bg-white p-5 sm:p-6 md:p-7 rounded-3xl border border-neutral-200/90 shadow-2xs hover:shadow-md hover:border-neutral-900/30 transition-all duration-300 flex flex-col md:flex-row items-center justify-between gap-5 sm:gap-6 flex-1 min-h-[190px]"
                     >
                       {/* Left Side: Editorial Content */}
-                      <div className="flex-1 flex flex-col justify-between h-full min-w-0">
-                        <div className="flex flex-col gap-2">
+                      <div className="flex-1 flex flex-col justify-between h-full min-w-0 w-full">
+                        <div className="flex flex-col gap-2.5">
                           <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 rounded bg-red-600 text-white text-[10px] font-black uppercase tracking-wider">
-                              BERITA UTAMA
+                            <span className="px-3 py-1 rounded-full bg-neutral-900 text-white text-[10px] font-bold uppercase tracking-wider">
+                              Berita Utama
                             </span>
-                            <span className="px-2.5 py-0.5 rounded bg-neutral-100 text-neutral-700 text-[10px] font-bold uppercase tracking-wider border border-neutral-200">
-                              {getCategoryName(heroMain.categoryId)}
+                            <span className="px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 text-[10px] font-bold uppercase tracking-wider border border-neutral-200/60">
+                              {getCategoryName(heroMain)}
                             </span>
                           </div>
                           
-                          <h2 className="text-lg sm:text-xl md:text-2xl lg:text-[26px] font-normal text-neutral-900 leading-snug tracking-tight group-hover:text-red-600 transition-colors duration-200 line-clamp-2 md:line-clamp-3">
+                          <h2 className="text-xl sm:text-2xl md:text-2xl lg:text-[27px] font-display font-bold text-neutral-900 leading-snug tracking-tight group-hover:text-red-600 transition-colors duration-200 line-clamp-2 md:line-clamp-3">
                             {heroMain.title}
                           </h2>
                           
                           {heroMain.content && (
-                            <p className="text-neutral-500 text-xs sm:text-[13px] leading-relaxed line-clamp-2 hidden sm:block">
-                              {getCleanExcerpt(heroMain.content, 130)}
+                            <p className="text-neutral-600 text-xs sm:text-[13px] leading-relaxed line-clamp-2 hidden sm:block font-normal">
+                              {getCleanExcerpt(heroMain.content, 140)}
                             </p>
                           )}
                         </div>
                         
-                        <div className="mt-3 pt-2.5 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
-                          <span className="font-semibold uppercase tracking-wide text-red-600">
-                            📍 {heroMain.news_location || 'Nasional'}
+                        <div className="mt-4 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
+                          <span className="font-semibold tracking-wide text-neutral-600">
+                            {heroMain.news_location || 'Nasional'}
                           </span>
-                          <span className="font-medium flex items-center gap-1 font-calibri">
+                          <span className="font-medium flex items-center gap-1.5 text-neutral-400">
                             <Clock size={12} />
                             {formatDate(heroMain.date, (heroMain as any).created_at)}
                           </span>
                         </div>
                       </div>
 
-                      {/* Right Side: Visual Cover - Slightly larger as requested */}
-                      <div className="w-36 h-28 sm:w-48 sm:h-36 md:w-60 md:h-44 lg:w-72 lg:h-48 rounded-xl overflow-hidden shrink-0 bg-neutral-950 relative shadow-xs self-center">
+                      {/* Right Side: Visual Cover */}
+                      <div className="w-full md:w-64 lg:w-72 h-44 sm:h-48 md:h-48 rounded-2xl overflow-hidden shrink-0 bg-neutral-100 relative shadow-2xs">
                         <BlurImage
                           src={getArticleImage(heroMain)}
                           alt={heroMain.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                         />
                       </div>
                     </Link>
 
                     {/* Secondary Horizontal Items Side-By-Side */}
                     {heroSub.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {heroSub.slice(0, 2).map((sub, idx) => (
                           <Link
                             key={sub.id || idx}
-                            to={`${getBasePath()}/${slugify(getCategoryName(sub.categoryId))}/${slugify(sub.title)}`}
-                            className="group bg-white p-3.5 sm:p-4 rounded-xl border border-neutral-200/90 flex gap-3 hover:border-red-400 hover:shadow-2xs transition-all items-center h-full"
+                            to={`${getBasePath()}/${slugify(getCategoryName(sub))}/${slugify(sub.title)}`}
+                            className="group bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 flex gap-3.5 hover:border-neutral-900/30 hover:shadow-2xs transition-all items-center h-full"
                           >
-                            <div className="w-24 h-20 sm:w-28 sm:h-22 rounded-lg overflow-hidden shrink-0 bg-neutral-950 relative">
+                            <div className="w-24 h-22 sm:w-28 sm:h-24 rounded-xl overflow-hidden shrink-0 bg-neutral-100 relative">
                               <BlurImage
                                 src={getArticleImage(sub)}
                                 alt={sub.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                               />
                             </div>
                             <div className="flex flex-col justify-between min-w-0 flex-1 h-full py-0.5">
                               <div>
-                                <span className="text-[9px] font-bold text-red-600 uppercase tracking-wider block mb-1">
-                                  {getCategoryName(sub.categoryId)}
+                                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block mb-1">
+                                  {getCategoryName(sub)}
                                 </span>
-                                <h4 className="text-xs sm:text-[13px] font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
+                                <h4 className="text-xs sm:text-[13px] font-display font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
                                   {sub.title}
                                 </h4>
                               </div>
-                              <div className="flex items-center justify-between text-[10px] text-neutral-400 font-calibri mt-2 pt-1 border-t border-neutral-100">
-                                <span>📍 {sub.news_location || 'Nasional'}</span>
+                              <div className="flex items-center justify-between text-[10px] text-neutral-400 mt-2 pt-1.5 border-t border-neutral-100 font-medium">
+                                <span>{sub.news_location || 'Nasional'}</span>
                                 <span>{formatDate(sub.date, (sub as any).created_at)}</span>
                               </div>
                             </div>
@@ -703,15 +716,15 @@ export default function NewsPage() {
                   </div>
 
                   {/* RIGHT SIDEBAR POPULAR LIST (4 Cols - "TERPOPULER HARIAN") */}
-                  <div className="lg:col-span-4 bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between h-full">
+                  <div className="lg:col-span-4 bg-white p-6 sm:p-7 rounded-3xl border border-neutral-200/90 shadow-2xs flex flex-col justify-between h-full">
                     <div>
-                      <div className="flex items-center justify-between border-b-2 border-red-600 pb-2.5 mb-2.5 gap-2">
-                        <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-tight text-neutral-900 flex items-center gap-1.5">
-                          <TrendingUp size={15} className="text-red-600" />
-                          <span>TERPOPULER HARIAN</span>
+                      <div className="flex items-center justify-between border-b border-neutral-100 pb-3 mb-3 gap-2">
+                        <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                          <TrendingUp size={16} className="text-red-600" />
+                          <span>Terpopuler Harian</span>
                         </h3>
-                        <span className="text-[9px] text-red-600 font-bold tracking-wider bg-red-50 px-2 py-0.5 rounded border border-red-200 uppercase">
-                          24 JAM
+                        <span className="text-[10px] text-neutral-500 font-bold tracking-wider bg-neutral-100 px-2.5 py-0.5 rounded-full uppercase">
+                          24 Jam
                         </span>
                       </div>
 
@@ -719,19 +732,19 @@ export default function NewsPage() {
                         {popularHarian.slice(0, 5).map((pop, idx) => (
                           <Link
                             key={pop.id || idx}
-                            to={`${getBasePath()}/${slugify(getCategoryName(pop.categoryId))}/${slugify(pop.title)}`}
-                            className="py-2.5 group flex gap-3 items-start hover:bg-neutral-50 px-1.5 rounded-lg transition-colors"
+                            to={`${getBasePath()}/${slugify(getCategoryName(pop))}/${slugify(pop.title)}`}
+                            className="py-3 group flex gap-3.5 items-start hover:bg-neutral-50 px-2 rounded-xl transition-colors"
                           >
-                            <span className={`text-lg font-black font-display shrink-0 w-5 text-center ${
+                            <span className={`text-xl font-bold font-display shrink-0 w-6 text-center ${
                               idx === 0 ? 'text-red-600' : 'text-neutral-400'
                             }`}>
-                              0{idx + 1}
+                              {idx + 1}
                             </span>
                             <div className="flex flex-col min-w-0 flex-1">
-                              <span className="text-[9px] font-bold text-red-600 uppercase tracking-wider block mb-0.5">
-                                {getCategoryName(pop.categoryId)}
+                              <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block mb-1">
+                                {getCategoryName(pop)}
                               </span>
-                              <h4 className="text-xs font-normal text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
+                              <h4 className="text-xs sm:text-[13px] font-display font-bold text-neutral-900 leading-snug line-clamp-2 group-hover:text-red-600 transition-colors">
                                 {pop.title}
                               </h4>
                             </div>
@@ -759,14 +772,14 @@ export default function NewsPage() {
                         return listToDisplay.map((art, idx) => (
                           <Link
                             key={art.id || idx}
-                            to={`${getBasePath()}/${slugify(getCategoryName(art.categoryId))}/${slugify(art.title)}`}
-                            className="group flex flex-col gap-1"
+                            to={`${getBasePath()}/${slugify(getCategoryName(art))}/${slugify(art.title)}`}
+                            className="group flex flex-col gap-1 p-3 rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-900/30 transition-all"
                           >
-                            <h4 className="text-xs sm:text-sm font-normal text-neutral-900 leading-snug group-hover:text-red-600 transition-colors line-clamp-2">
+                            <h4 className="text-xs sm:text-sm font-display font-bold text-neutral-900 leading-snug group-hover:text-red-600 transition-colors line-clamp-2">
                               {art.title}
                             </h4>
-                            <span className="text-[9px] text-red-600 font-extrabold uppercase tracking-wider block">
-                              {getCategoryName(art.categoryId)}
+                            <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mt-1">
+                              {getCategoryName(art)}
                             </span>
                           </Link>
                         ));
@@ -778,21 +791,19 @@ export default function NewsPage() {
                 {/* 5. RED ACCENT SPECIAL SEGMENT ("SOROTAN UTAMA") */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start my-2">
                   
-                  {/* LEFT RED-ACCENT FOCUS BOX */}
-                  <div className="lg:col-span-12 bg-red-700 text-white rounded-2xl p-5 sm:p-6 shadow-md relative overflow-hidden flex flex-col gap-4">
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-red-600/30 rounded-full translate-x-20 -translate-y-20 pointer-events-none" />
-                    
-                    <div className="flex items-center justify-between border-b border-red-500/80 pb-2.5 z-10">
-                      <h3 className="text-xs sm:text-sm md:text-base font-black uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 bg-white rounded-full animate-ping" />
+                  {/* CLEAN MODERN MINIMALIST FOCUS BOX */}
+                  <div className="lg:col-span-12 bg-white text-neutral-900 rounded-3xl p-6 sm:p-7 md:p-8 border border-neutral-200/90 shadow-2xs relative overflow-hidden flex flex-col gap-6">
+                    <div className="flex items-center justify-between border-b border-neutral-100 pb-3 z-10">
+                      <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-neutral-900 flex items-center gap-2">
+                        <span className="w-2 h-2 bg-red-600 rounded-full" />
                         <span>SOROTAN UTAMA</span>
                       </h3>
-                      <span className="text-[10px] font-bold uppercase tracking-widest bg-white/20 px-2 py-0.5 rounded cursor-pointer hover:bg-white/30 transition-colors">
-                        LIHAT SEMUA
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 bg-neutral-100 px-2.5 py-1 rounded-full cursor-pointer hover:bg-neutral-200 transition-colors">
+                        Kabar Terpilih
                       </span>
                     </div>
 
-                    {/* Content split in red box */}
+                    {/* Content split in clean box */}
                     {sorotanUtamaList.length > 0 ? (
                       (() => {
                         const focusArticle = sorotanUtamaList[0];
@@ -802,50 +813,57 @@ export default function NewsPage() {
 
                         return (
                           <>
-                            <div className="flex flex-col md:flex-row gap-5 lg:gap-7 items-center md:items-stretch w-full z-10">
-                              {/* Focus Image - Proportional aspect ratio & controlled height for clean single screen fit */}
+                            <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-center md:items-stretch w-full z-10">
+                              {/* Focus Image - Proportional aspect ratio & controlled height */}
                               <Link 
-                                to={`${getBasePath()}/${slugify(getCategoryName(focusArticle.categoryId))}/${slugify(focusArticle.title)}`}
-                                className="w-full md:w-[42%] lg:w-[38%] rounded-xl overflow-hidden bg-neutral-900 shrink-0 relative shadow-md group block aspect-[16/10] sm:aspect-[16/9] md:aspect-auto md:h-52 lg:h-56"
+                                to={`${getBasePath()}/${slugify(getCategoryName(focusArticle))}/${slugify(focusArticle.title)}`}
+                                className="w-full md:w-[45%] lg:w-[40%] rounded-2xl overflow-hidden bg-neutral-100 shrink-0 relative group block aspect-[16/10] sm:aspect-[16/9] md:aspect-auto md:h-56 lg:h-64 shadow-2xs"
                               >
                                 <BlurImage
                                   src={getArticleImage(focusArticle)}
                                   alt={focusArticle.title}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                                 />
                               </Link>
 
                               {/* Focus Content Text */}
-                              <div className="flex flex-col justify-between flex-1 py-0.5 min-w-0">
+                              <div className="flex flex-col justify-between flex-1 py-1 min-w-0">
                                 <div>
-                                  <span className="text-[10px] font-black text-amber-300 uppercase tracking-widest block mb-1">
-                                    {getCategoryName(focusArticle.categoryId)}
-                                  </span>
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-200/60 px-2.5 py-0.5 rounded-full inline-block">
+                                      {getCategoryName(focusArticle)}
+                                    </span>
+                                    <span className="text-xs text-neutral-400">•</span>
+                                    <span className="text-xs text-neutral-500 font-medium">
+                                      {focusArticle.news_location || 'Nasional'}
+                                    </span>
+                                  </div>
+
                                   <Link 
-                                    to={`${getBasePath()}/${slugify(getCategoryName(focusArticle.categoryId))}/${slugify(focusArticle.title)}`}
-                                    className="hover:text-amber-200 transition-colors block"
+                                    to={`${getBasePath()}/${slugify(getCategoryName(focusArticle))}/${slugify(focusArticle.title)}`}
+                                    className="group-hover:text-red-600 transition-colors block"
                                   >
-                                    <h4 className="text-xl sm:text-2xl md:text-[25px] lg:text-[28px] font-normal leading-snug mb-2 drop-shadow-sm line-clamp-3">
+                                    <h4 className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-neutral-900 leading-snug mb-3 hover:text-red-600 transition-colors line-clamp-3">
                                       {focusArticle.title}
                                     </h4>
                                   </Link>
-                                  <p className="text-xs sm:text-sm text-red-100/90 leading-relaxed line-clamp-2 sm:line-clamp-3 font-normal">
-                                    {getCleanExcerpt(focusArticle.content, 140)}
+                                  <p className="text-xs sm:text-sm text-neutral-600 leading-relaxed line-clamp-3 font-normal">
+                                    {getCleanExcerpt(focusArticle.content, 160)}
                                   </p>
                                 </div>
-                                <span className="text-[10px] text-red-200 mt-2 sm:mt-3 font-mono block">
-                                  {focusArticle.news_location || 'Nasional'} • {formatDate(focusArticle.date, (focusArticle as any).created_at)}
+                                <span className="text-xs text-neutral-400 mt-4 block font-medium">
+                                  {formatDate(focusArticle.date, (focusArticle as any).created_at)}
                                 </span>
                               </div>
                             </div>
 
-                            {/* Red Box Quick-Links footer: Clear, larger font for bottom 3 titles */}
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 border-t border-red-500/80 pt-3 z-10">
+                            {/* Clean Quick-Links footer for bottom 3 titles */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-neutral-100 pt-5 z-10">
                               {subSorotan.map((art, idx) => (
                                 <Link
                                   key={art.id || idx}
-                                  to={`${getBasePath()}/${slugify(getCategoryName(art.categoryId))}/${slugify(art.title)}`}
-                                  className="hover:text-amber-200 transition-all font-normal text-xs sm:text-sm md:text-[14px] line-clamp-2 leading-snug border-l-2 border-amber-300 pl-3 py-0.5"
+                                  to={`${getBasePath()}/${slugify(getCategoryName(art))}/${slugify(art.title)}`}
+                                  className="text-neutral-800 hover:text-red-600 transition-colors font-medium text-xs sm:text-sm line-clamp-2 leading-snug border-l-2 border-neutral-200 hover:border-red-600 pl-3 py-1"
                                 >
                                   {art.title}
                                 </Link>
@@ -904,17 +922,17 @@ export default function NewsPage() {
                   )}
 
                   {/* Section Header */}
-                  <div className="flex items-center justify-between border-b-2 border-red-600 pb-2 bg-white px-4 py-3 rounded-t-xl">
-                    <h3 className="text-lg sm:text-xl md:text-2xl font-black uppercase tracking-tight text-neutral-900 flex items-center gap-2">
-                      <Flame size={18} className="text-red-600" />
+                  <div className="flex items-center justify-between pb-3 border-b border-neutral-200/80 mb-2">
+                    <h3 className="text-xl sm:text-2xl font-display font-bold tracking-tight text-neutral-900 flex items-center gap-2">
+                      <Flame size={20} className="text-red-600" />
                       <span>
                         {searchQuery
-                          ? `PENCARIAN: "${searchQuery}"`
+                          ? `Hasil Pencarian: "${searchQuery}"`
                           : activeFokus 
-                            ? `FOKUS: ${activeFokus.title}`
+                            ? `Fokus: ${activeFokus.title}`
                             : activeCategory === 'Semua' 
-                              ? 'BERITA TERKINI' 
-                              : `KATEGORI: ${activeCategory}`
+                              ? 'Kabar Terbaru' 
+                              : `Kategori: ${activeCategory}`
                         }
                       </span>
                     </h3>
@@ -964,28 +982,23 @@ export default function NewsPage() {
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.3 }}
                           key={article.id}
-                          className="group bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 hover:border-red-400 hover:shadow-md transition-all"
+                          className="group bg-white p-5 sm:p-6 rounded-3xl border border-neutral-200/90 hover:border-neutral-900/30 hover:shadow-sm transition-all"
                         >
-                          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-stretch h-full">
+                          <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-stretch h-full">
                             {/* Article Image */}
                             <Link
                               to={`${getBasePath()}/${slugify(catName)}/${slugify(article.title)}`}
-                              className="w-full aspect-[16/10] sm:aspect-none sm:w-48 sm:h-auto sm:self-stretch rounded-xl overflow-hidden shrink-0 bg-neutral-200 relative group-hover:opacity-95"
+                              className="w-full aspect-[16/10] sm:aspect-none sm:w-52 sm:h-auto sm:self-stretch rounded-2xl overflow-hidden shrink-0 bg-neutral-100 relative group-hover:opacity-95"
                             >
                               <BlurImage
                                 src={image}
                                 alt={article.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                               />
-                              <div className="absolute top-2 left-2 flex flex-wrap gap-1 z-10 pointer-events-none">
-                                <span className="bg-black/75 backdrop-blur-md text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                              <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10 pointer-events-none">
+                                <span className="bg-white/95 backdrop-blur-sm text-neutral-900 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-2xs border border-neutral-200/50">
                                   {catName}
                                 </span>
-                                {article.news_location && (
-                                  <span className="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider shadow">
-                                    {article.news_location}
-                                  </span>
-                                )}
                               </div>
                             </Link>
 
@@ -1103,7 +1116,7 @@ export default function NewsPage() {
         )}
       </main>
 
-      <Footer portal="gnext" />
+      <Footer portal="company" />
     </div>
   );
 }

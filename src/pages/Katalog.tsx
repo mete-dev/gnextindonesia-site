@@ -35,7 +35,11 @@ const CATALOG_ITEMS = [
   }
 ];
 
+import { useBrand } from '../lib/brandConfig';
+
 export default function Katalog() {
+  const { brand } = useBrand();
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -62,7 +66,7 @@ export default function Katalog() {
               transition={{ delay: 0.1 }}
               className="text-lg md:text-xl text-neutral-600 max-w-2xl font-serif"
             >
-              Jelajahi berbagai solusi digital unggulan dari Gnext Indonesia untuk mendukung pertumbuhan bisnis dan instansi Anda.
+              Jelajahi berbagai solusi digital unggulan dari {brand.name} untuk mendukung pertumbuhan bisnis dan instansi Anda.
             </motion.p>
           </div>
 
