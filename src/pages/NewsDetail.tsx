@@ -1246,7 +1246,7 @@ export default function NewsDetailPage() {
           onClose={() => setIsRenderModalOpen(false)}
           article={{
             ...article,
-            categoryName: categoryName,
+            categoryName: getCategoryName(article.categoryId),
             cover_image: coverImg
           }}
         />
