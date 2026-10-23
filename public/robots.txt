@@ -5,11 +5,11 @@ Disallow: /studio/
 Disallow: /loginstudio
 Disallow: /api/
 
-# Sitemaps for Gnext Indonesia Networks
+# Sitemaps for Gnext Indonesia & Halo Indonesia Networks
 Sitemap: https://www.gnextindonesia.site/sitemap.xml
+Sitemap: https://www.gnextindonesia.site/sitemap-index.xml
 Sitemap: https://news.gnextindonesia.site/sitemap.xml
-Sitemap: https://yoikijatim.gnextindonesia.site/sitemap.xml
-Sitemap: https://lumajangtalks.gnextindonesia.site/sitemap.xml
+Sitemap: https://haloindonesia.gnn.web.id/sitemap.xml
 Sitemap: https://lenterajakarta.gnextindonesia.site/sitemap.xml
 Sitemap: https://lenterajateng.gnextindonesia.site/sitemap.xml
 Sitemap: https://lenterajatim.gnextindonesia.site/sitemap.xml

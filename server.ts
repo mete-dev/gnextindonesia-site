@@ -190,9 +190,6 @@ const LENTERA_NETWORKS_LIST = [
 
 const ALL_PORTALS_CONFIG = [
   { id: 'gnext', name: 'GNEXT NEWS', hostPrefix: 'news' },
-  { id: 'yoikijatim', name: 'YO IKI JATIM', hostPrefix: 'yoikijatim' },
-  { id: 'lumajangtalks', name: 'LUMAJANG TALKS', hostPrefix: 'lumajangtalks' },
-  { id: 'gummah', name: 'G-UMMAH', hostPrefix: 'gummah' },
   ...LENTERA_NETWORKS_LIST.map(l => ({ id: l.id, name: l.name, hostPrefix: l.id }))
 ];
 
@@ -239,27 +236,35 @@ const getArticlePortal = (article: any): string => {
   return 'gnext';
 };
 
-const generateSitemapIndexXml = (baseUrl = 'https://www.gnextindonesia.site') => {
+const generateSitemapIndexXml = (baseUrl = 'https://www.gnextindonesia.site', reqHost = '') => {
+  const isHalo = reqHost.toLowerCase().includes('haloindonesia');
   const todayStr = new Date().toISOString().split('T')[0];
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
-  // Main corporate site sitemap
+  // Main site sitemap
   xml += `  <sitemap>\n`;
   xml += `    <loc>${baseUrl}/sitemap-main.xml</loc>\n`;
   xml += `    <lastmod>${todayStr}</lastmod>\n`;
   xml += `  </sitemap>\n`;
 
-  // Regional portals sitemaps
-  for (const portal of ALL_PORTALS_CONFIG) {
-    let loc = `${baseUrl}/sitemap-${portal.id}.xml`;
-    if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1') && !baseUrl.includes('run.app')) {
-      loc = `https://${portal.hostPrefix}.gnextindonesia.site/sitemap-${portal.id}.xml`;
-    }
+  if (isHalo) {
     xml += `  <sitemap>\n`;
-    xml += `    <loc>${loc}</loc>\n`;
+    xml += `    <loc>${baseUrl}/sitemap-news.xml</loc>\n`;
     xml += `    <lastmod>${todayStr}</lastmod>\n`;
     xml += `  </sitemap>\n`;
+  } else {
+    // Regional portals sitemaps
+    for (const portal of ALL_PORTALS_CONFIG) {
+      let loc = `${baseUrl}/sitemap-${portal.id}.xml`;
+      if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1') && !baseUrl.includes('run.app')) {
+        loc = `https://${portal.hostPrefix}.gnextindonesia.site/sitemap-${portal.id}.xml`;
+      }
+      xml += `  <sitemap>\n`;
+      xml += `    <loc>${loc}</loc>\n`;
+      xml += `    <lastmod>${todayStr}</lastmod>\n`;
+      xml += `  </sitemap>\n`;
+    }
   }
 
   xml += `</sitemapindex>`;
@@ -269,6 +274,7 @@ const generateSitemapIndexXml = (baseUrl = 'https://www.gnextindonesia.site') =>
 const generateSitemapXml = async (reqHost = '', reqPath = '') => {
   const lowerHost = reqHost.toLowerCase();
   const lowerPath = reqPath.toLowerCase();
+  const isHalo = lowerHost.includes('haloindonesia');
 
   // Determine requested portal or sitemap type
   let requestedPortal: string | null = null;
@@ -396,6 +402,9 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
       const protocol = reqHost.includes('localhost') ? 'http' : 'https';
       return `${protocol}://${reqHost}`;
     }
+    if (isHalo) {
+      return 'https://haloindonesia.gnn.web.id';
+    }
     const config = ALL_PORTALS_CONFIG.find(p => p.id === pId);
     const prefix = config ? config.hostPrefix : pId;
     return `https://${prefix}.gnextindonesia.site`;
@@ -434,7 +443,7 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
     // Corporate site sitemap only
     const mainBase = reqHost && (reqHost.includes('localhost') || reqHost.includes('127.0.0.1') || reqHost.includes('run.app'))
       ? `http://${reqHost}`
-      : 'https://www.gnextindonesia.site';
+      : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site');
 
     for (const page of ['/', '/about', '/work', '/platform', '/privacy', '/terms']) {
       addUrlEntry(`${mainBase}${page}`, todayStr, page === '/' ? 'daily' : 'weekly', page === '/' ? '1.0' : '0.8');
@@ -482,18 +491,22 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
   } else {
     // Combined / Master Sitemap (All portals & subdomains)
     const isLocalOrPreview = reqHost.includes('localhost') || reqHost.includes('127.0.0.1') || reqHost.includes('run.app');
-    const mainBase = isLocalOrPreview ? `http://${reqHost}` : 'https://www.gnextindonesia.site';
+    const mainBase = isLocalOrPreview ? `http://${reqHost}` : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site');
 
     // Corporate main site pages
     for (const page of ['/', '/about', '/work', '/platform', '/privacy', '/terms']) {
       addUrlEntry(`${mainBase}${page}`, todayStr, page === '/' ? 'daily' : 'weekly', page === '/' ? '1.0' : '0.8');
     }
 
-    // Process all portals
-    for (const portalConfig of ALL_PORTALS_CONFIG) {
+    // Process portals
+    const activePortalsForSitemap = isHalo 
+      ? [{ id: 'gnext', name: 'Halo Indonesia News', hostPrefix: 'haloindonesia' }]
+      : ALL_PORTALS_CONFIG;
+
+    for (const portalConfig of activePortalsForSitemap) {
       const pId = portalConfig.id;
-      const baseUrl = isLocalOrPreview ? mainBase : `https://${portalConfig.hostPrefix}.gnextindonesia.site`;
-      const pubName = portalConfig.name;
+      const baseUrl = isLocalOrPreview ? mainBase : (isHalo ? 'https://haloindonesia.gnn.web.id' : `https://${portalConfig.hostPrefix}.gnextindonesia.site`);
+      const pubName = isHalo ? 'Halo Indonesia' : portalConfig.name;
 
       addUrlEntry(`${baseUrl}/`, todayStr, 'daily', '1.0');
       addUrlEntry(`${baseUrl}/privacy`, todayStr, 'monthly', '0.5');
@@ -540,11 +553,12 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
 app.get('/sitemap-index.xml', (req, res) => {
   const host = (req.headers.host as string) || 'www.gnextindonesia.site';
   const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const isHalo = host.toLowerCase().includes('haloindonesia');
   const baseUrl = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('run.app')
     ? `${protocol}://${host}`
-    : 'https://www.gnextindonesia.site';
+    : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site');
 
-  const xml = generateSitemapIndexXml(baseUrl);
+  const xml = generateSitemapIndexXml(baseUrl, host);
   res.header('Content-Type', 'application/xml; charset=utf-8');
   res.header('Cache-Control', 'public, max-age=3600, s-maxage=3600');
   res.send(xml);
@@ -566,9 +580,15 @@ app.get(['/sitemap.xml', '/sitemap-main.xml', '/sitemap-all.xml', '/sitemap-:por
 app.get('/robots.txt', (req, res) => {
   const host = (req.headers.host as string) || 'www.gnextindonesia.site';
   const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const isHalo = host.toLowerCase().includes('haloindonesia');
   const baseUrl = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('run.app')
     ? `${protocol}://${host}`
-    : `https://${host}`;
+    : (isHalo ? 'https://haloindonesia.gnn.web.id' : `https://${host}`);
+
+  let sitemapsList = `Sitemap: ${baseUrl}/sitemap.xml\nSitemap: ${baseUrl}/sitemap-index.xml`;
+  if (!isHalo && (host.includes('gnextindonesia.site') || host.includes('localhost'))) {
+    sitemapsList += `\nSitemap: https://news.gnextindonesia.site/sitemap.xml\nSitemap: https://haloindonesia.gnn.web.id/sitemap.xml`;
+  }
 
   const robots = `User-agent: *
 Allow: /
@@ -581,8 +601,7 @@ Disallow: /api/update-sitemap
 Disallow: /api/indexing/
 Disallow: /api/track.gif
 
-Sitemap: ${baseUrl}/sitemap.xml
-Sitemap: ${baseUrl}/sitemap-index.xml
+${sitemapsList}
 `;
 
   res.header('Content-Type', 'text/plain; charset=utf-8');
