@@ -21,6 +21,11 @@ export default function Footer({ portal }: FooterProps) {
   const detectedPortal = detectPortal(hostname, pathname);
 
   const getActivePortal = (): string => {
+    // Jika berada di The Javanese Times, selalu gunakan corporate/editorial yellow footer
+    if (brand.id === 'thejavanesetimes') {
+      return 'company';
+    }
+
     if (portal) {
       if (portal === 'news' || portal === 'gnextnews') return 'gnext';
       if (portal === 'company' || portal === 'corporate' || portal === 'studio') return 'company';
@@ -99,22 +104,41 @@ export default function Footer({ portal }: FooterProps) {
     }
   };
 
-  // 1. CORPORATE SITE FOOTER (Gnext Creative Studio)
-  if (activePortal === 'company') {
+  // 1. CORPORATE & THE JAVANESE TIMES YELLOW FOOTER (Gnext Creative Studio & The Javanese Times)
+  if (activePortal === 'company' || brand.id === 'thejavanesetimes') {
     return (
       <footer id="contact" className="bg-accent text-neutral-900 pt-24 pb-8 overflow-hidden rounded-t-[3rem] -mt-10 relative z-20">
         <div className="w-full max-w-7xl mx-auto px-6 md:px-12">
           <div className="flex flex-col lg:flex-row justify-between gap-16 mb-24">
             <div className="max-w-2xl">
+              {brand.id === 'thejavanesetimes' && (
+                <div className="mb-8">
+                  <img 
+                    src={brand.logo} 
+                    alt={brand.name} 
+                    className="h-12 md:h-16 w-auto object-contain" 
+                  />
+                </div>
+              )}
               <motion.h2 
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 className="text-6xl sm:text-7xl md:text-8xl font-display font-extrabold uppercase tracking-tighter leading-[0.9] mb-8"
               >
-                Mari <br/>
-                berkarya <br/>
-                <span className="italic font-light text-neutral-700">bersama.</span>
+                {brand.id === 'thejavanesetimes' ? (
+                  <>
+                    Suara <br/>
+                    kebenaran <br/>
+                    <span className="italic font-light text-neutral-700">nusantara.</span>
+                  </>
+                ) : (
+                  <>
+                    Mari <br/>
+                    berkarya <br/>
+                    <span className="italic font-light text-neutral-700">bersama.</span>
+                  </>
+                )}
               </motion.h2>
               <a 
                 href={`mailto:${brand.editorialContact}`}
@@ -126,21 +150,59 @@ export default function Footer({ portal }: FooterProps) {
             
             <div className="flex flex-col sm:flex-row gap-12 lg:gap-24">
               <div>
-                <h4 className="font-display font-bold text-xl mb-6">Navigation</h4>
-                <ul className="flex flex-col gap-4">
-                  <li><Link to="/about" className="hover:font-medium transition-all">About Us</Link></li>
-                  <li><Link to="/work" className="hover:font-medium transition-all">Work</Link></li>
-                  <li><Link to="/platform" className="hover:font-medium transition-all">Platform</Link></li>
-                  <li><Link to="/news" className="hover:font-medium transition-all font-semibold text-red-600">News & Insights</Link></li>
+                <h4 className="font-display font-bold text-xl mb-6">
+                  {brand.id === 'thejavanesetimes' ? 'Rubrik Berita' : 'Navigation'}
+                </h4>
+                <ul className="flex flex-col gap-4 font-medium">
+                  {brand.id === 'thejavanesetimes' ? (
+                    <>
+                      <li><Link to="/news?category=nasional" className="hover:font-bold transition-all">Nasional</Link></li>
+                      <li><Link to="/news?category=daerah" className="hover:font-bold transition-all">Jawa & Daerah</Link></li>
+                      <li><Link to="/news?category=ekonomi" className="hover:font-bold transition-all">Ekonomi & Bisnis</Link></li>
+                      <li><Link to="/news?category=budaya" className="hover:font-bold transition-all">Budaya & Wisata</Link></li>
+                      <li><Link to="/news?category=teknologi" className="hover:font-bold transition-all">Teknologi & Saintek</Link></li>
+                    </>
+                  ) : (
+                    <>
+                      <li><Link to="/about" className="hover:font-medium transition-all">About Us</Link></li>
+                      <li><Link to="/work" className="hover:font-medium transition-all">Work</Link></li>
+                      <li><Link to="/platform" className="hover:font-medium transition-all">Platform</Link></li>
+                      <li><Link to="/news" className="hover:font-medium transition-all font-semibold text-red-600">News & Insights</Link></li>
+                    </>
+                  )}
                 </ul>
               </div>
               <div>
-                <h4 className="font-display font-bold text-xl mb-6">Socials</h4>
+                <h4 className="font-display font-bold text-xl mb-6">
+                  {brand.id === 'thejavanesetimes' ? 'Hubungi Kami' : 'Socials'}
+                </h4>
                 <ul className="flex flex-col gap-4">
-                  <li><a href="https://instagram.com/gnextindonesiacom" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:font-medium transition-all"><Instagram size={20} /> Instagram</a></li>
-                  <li><a href="https://youtube.com/@gnextindonesia" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:font-medium transition-all"><Youtube size={20} /> YouTube</a></li>
-                  <li><a href="#" className="flex items-center gap-2 hover:font-medium transition-all"><Linkedin size={20} /> LinkedIn</a></li>
-                  <li><a href="#" className="flex items-center gap-2 hover:font-medium transition-all"><Twitter size={20} /> Twitter</a></li>
+                  {brand.id === 'thejavanesetimes' ? (
+                    <>
+                      <li>
+                        <a href={`mailto:${brand.editorialContact}`} className="flex items-center gap-2 hover:font-bold transition-all">
+                          <Mail size={18} /> Redaksi Editorial
+                        </a>
+                      </li>
+                      <li>
+                        <a href="https://wa.me/6285852488293" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:font-bold transition-all">
+                          <Phone size={18} /> Kontak Liputan / WA
+                        </a>
+                      </li>
+                      <li>
+                        <Link to="/register" className="flex items-center gap-2 font-bold hover:underline transition-all">
+                          Daftar Penulis Pers
+                        </Link>
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li><a href="https://instagram.com/gnextindonesiacom" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:font-medium transition-all"><Instagram size={20} /> Instagram</a></li>
+                      <li><a href="https://youtube.com/@gnextindonesia" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:font-medium transition-all"><Youtube size={20} /> YouTube</a></li>
+                      <li><a href="#" className="flex items-center gap-2 hover:font-medium transition-all"><Linkedin size={20} /> LinkedIn</a></li>
+                      <li><a href="#" className="flex items-center gap-2 hover:font-medium transition-all"><Twitter size={20} /> Twitter</a></li>
+                    </>
+                  )}
                 </ul>
               </div>
             </div>

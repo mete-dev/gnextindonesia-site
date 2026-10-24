@@ -579,7 +579,20 @@ export default function NewsPage() {
         description="Portal berita terkini seputar industri kreatif, ekonomi digital, teknologi, dan budaya muda Indonesia."
         path="/news"
       />
-      <Navbar />
+      <Navbar 
+        portal="gnext"
+        categories={categoryNames}
+        activeCategory={activeCategory}
+        onSelectCategory={handleCategoryClick}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        tickerArticles={articles}
+        getCategoryName={(id: string) => {
+          const found = categories.find(c => c.id === id || c.slug === id);
+          return found ? found.name : id;
+        }}
+        getBasePath={getBasePath}
+      />
 
       {/* RUNNING TEXT (TICKER) KHUSUS PAGE NEWS */}
       <div className="pt-20 sm:pt-24 border-b border-neutral-200/80 bg-white/95 backdrop-blur-md sticky top-0 z-30 shadow-3xs">

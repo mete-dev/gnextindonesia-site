@@ -707,27 +707,54 @@ export default function Navbar({
           {brand.id !== 'thejavanesetimes' && <span>{brand.name}</span>}
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.name}
-              to={link.href}
-              className={`text-sm font-medium hover:text-neutral-900 transition-colors ${
-                location.pathname === link.href ? 'text-neutral-900 font-semibold' : 'text-neutral-500'
-              }`}
-            >
-              {link.name}
-            </Link>
-          ))}
+        <nav className="hidden md:flex items-center gap-6 lg:gap-8">
+          {brand.isDedicatedNews && categories && categories.length > 0 ? (
+            categories.slice(0, 7).map((cat) => {
+              const isActive = (activeCategory || 'Semua').toLowerCase() === cat.toLowerCase();
+              return (
+                <button
+                  key={cat}
+                  onClick={() => {
+                    if (onSelectCategory) {
+                      onSelectCategory(cat);
+                    } else {
+                      navigate(cat.toLowerCase() === 'semua' ? '/' : `/?category=${encodeURIComponent(slugify(cat))}`);
+                    }
+                  }}
+                  className={`text-sm font-semibold transition-colors cursor-pointer py-1 ${
+                    isActive
+                      ? 'text-neutral-900 border-b-2 border-neutral-900 font-extrabold'
+                      : 'text-neutral-500 hover:text-neutral-900'
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })
+          ) : (
+            navLinks.map((link) => (
+              <Link
+                key={link.name}
+                to={link.href}
+                className={`text-sm font-medium hover:text-neutral-900 transition-colors ${
+                  location.pathname === link.href ? 'text-neutral-900 font-semibold' : 'text-neutral-500'
+                }`}
+              >
+                {link.name}
+              </Link>
+            ))
+          )}
 
-          <a
-            href="https://wa.me/6285852488293"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-6 py-2.5 bg-neutral-900 text-neutral-50 text-sm font-medium rounded-full hover:bg-neutral-800 transition-colors"
-          >
-            Let's Talk
-          </a>
+          {!brand.isDedicatedNews && (
+            <a
+              href="https://wa.me/6285852488293"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-2.5 bg-neutral-900 text-neutral-50 text-sm font-medium rounded-full hover:bg-neutral-800 transition-colors"
+            >
+              Let's Talk
+            </a>
+          )}
         </nav>
 
         <button
@@ -749,26 +776,51 @@ export default function Navbar({
             className="absolute top-0 left-0 right-0 h-screen bg-neutral-50 px-6 pt-24 pb-12 flex flex-col md:hidden"
           >
             <nav className="flex flex-col gap-6 text-center mt-12 overflow-y-auto max-h-[75vh] no-scrollbar">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  className="text-4xl font-display font-bold uppercase tracking-tight text-neutral-900 hover:text-neutral-500 transition-colors"
+              {brand.isDedicatedNews && categories && categories.length > 0 ? (
+                categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      if (onSelectCategory) {
+                        onSelectCategory(cat);
+                      } else {
+                        navigate(cat.toLowerCase() === 'semua' ? '/' : `/?category=${encodeURIComponent(slugify(cat))}`);
+                      }
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`text-2xl font-display font-bold uppercase tracking-tight transition-colors ${
+                      (activeCategory || 'Semua').toLowerCase() === cat.toLowerCase()
+                        ? 'text-neutral-900 font-extrabold'
+                        : 'text-neutral-500 hover:text-neutral-900'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))
+              ) : (
+                navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="text-4xl font-display font-bold uppercase tracking-tight text-neutral-900 hover:text-neutral-500 transition-colors"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ))
+              )}
+
+              {!brand.isDedicatedNews && (
+                <a
+                  href="https://wa.me/6285852488293"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 px-8 py-4 bg-neutral-900 text-neutral-50 text-xl font-medium rounded-full mx-auto inline-block"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  {link.name}
-                </Link>
-              ))}
-
-              <a
-                href="https://wa.me/6285852488293"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 px-8 py-4 bg-neutral-900 text-neutral-50 text-xl font-medium rounded-full mx-auto inline-block"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Let's Talk
-              </a>
+                  Let's Talk
+                </a>
+              )}
             </nav>
           </motion.div>
         )}
