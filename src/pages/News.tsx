@@ -813,11 +813,11 @@ export default function NewsPage() {
 
                         return (
                           <>
-                            <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-center md:items-stretch w-full z-10">
+                            <div className="flex flex-col md:flex-row gap-6 lg:gap-8 items-start w-full z-10">
                               {/* Focus Image - Proportional aspect ratio & controlled height */}
                               <Link 
                                 to={`${getBasePath()}/${slugify(getCategoryName(focusArticle))}/${slugify(focusArticle.title)}`}
-                                className="w-full md:w-[45%] lg:w-[40%] rounded-2xl overflow-hidden bg-neutral-100 shrink-0 relative group block aspect-[16/10] sm:aspect-[16/9] md:aspect-auto md:h-56 lg:h-64 shadow-2xs"
+                                className="w-full md:w-[45%] lg:w-[40%] rounded-2xl overflow-hidden bg-neutral-100 shrink-0 relative group block aspect-[16/10] sm:aspect-[16/9] md:h-56 lg:h-64 shadow-2xs"
                               >
                                 <BlurImage
                                   src={getArticleImage(focusArticle)}
@@ -984,11 +984,11 @@ export default function NewsPage() {
                           key={article.id}
                           className="group bg-white p-5 sm:p-6 rounded-3xl border border-neutral-200/90 hover:border-neutral-900/30 hover:shadow-sm transition-all"
                         >
-                          <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-stretch h-full">
+                          <div className="flex flex-col sm:flex-row gap-5 sm:gap-6 items-start">
                             {/* Article Image */}
                             <Link
                               to={`${getBasePath()}/${slugify(catName)}/${slugify(article.title)}`}
-                              className="w-full aspect-[16/10] sm:aspect-none sm:w-52 sm:h-auto sm:self-stretch rounded-2xl overflow-hidden shrink-0 bg-neutral-100 relative group-hover:opacity-95"
+                              className="w-full aspect-[16/10] sm:w-56 sm:h-36 sm:aspect-auto rounded-2xl overflow-hidden shrink-0 bg-neutral-100 relative group-hover:opacity-95 block"
                             >
                               <BlurImage
                                 src={image}
@@ -1004,7 +1004,7 @@ export default function NewsPage() {
 
                             {/* Article Text Content */}
                             <div className="flex flex-col justify-between flex-1 min-w-0 h-full py-0.5">
-                              <div className="flex items-center justify-between text-xs text-neutral-400 mb-1.5 font-calibri">
+                              <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-sans">
                                 <span className="flex items-center gap-1 text-neutral-500">
                                   <Clock size={12} />
                                   {article.date || 'Baru Saja'}
