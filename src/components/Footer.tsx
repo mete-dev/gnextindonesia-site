@@ -174,9 +174,18 @@ export default function Footer({ portal }: FooterProps) {
           {/* Brand Header & Brand Info */}
           <div className="md:col-span-5">
             <Link to={homeHref} className="flex flex-col justify-center mb-4 text-white leading-none group">
+              {brand.id === 'thejavanesetimes' && (
+                <img 
+                  src={brand.logo} 
+                  alt={brand.name} 
+                  className="h-10 w-auto object-contain mb-3 filter brightness-0 invert" 
+                />
+              )}
               <div className="text-xl sm:text-2xl font-display font-black tracking-tighter uppercase leading-none">
                 <span className="font-serif italic font-black tracking-normal text-white">
-                  {brand.id === 'haloindonesia' ? (
+                  {brand.id === 'thejavanesetimes' ? (
+                    <>THE JAVANESE <span className={`${theme.accentText} font-sans not-italic font-black`}>TIMES</span></>
+                  ) : brand.id === 'haloindonesia' ? (
                     <>HALO <span className={`${theme.accentText} font-sans not-italic font-black`}>INDONESIA</span></>
                   ) : (
                     <>GNEXT <span className={`${theme.accentText} font-sans not-italic font-black`}>INDONESIA</span></>

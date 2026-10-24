@@ -237,7 +237,9 @@ const getArticlePortal = (article: any): string => {
 };
 
 const generateSitemapIndexXml = (baseUrl = 'https://www.gnextindonesia.site', reqHost = '') => {
-  const isHalo = reqHost.toLowerCase().includes('haloindonesia');
+  const lowerH = reqHost.toLowerCase();
+  const isHalo = lowerH.includes('haloindonesia');
+  const isJavanese = lowerH.includes('thejavanesetimes') || lowerH.includes('javanesetimes');
   const todayStr = new Date().toISOString().split('T')[0];
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
@@ -248,7 +250,7 @@ const generateSitemapIndexXml = (baseUrl = 'https://www.gnextindonesia.site', re
   xml += `    <lastmod>${todayStr}</lastmod>\n`;
   xml += `  </sitemap>\n`;
 
-  if (isHalo) {
+  if (isHalo || isJavanese) {
     xml += `  <sitemap>\n`;
     xml += `    <loc>${baseUrl}/sitemap-news.xml</loc>\n`;
     xml += `    <lastmod>${todayStr}</lastmod>\n`;
@@ -275,6 +277,7 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
   const lowerHost = reqHost.toLowerCase();
   const lowerPath = reqPath.toLowerCase();
   const isHalo = lowerHost.includes('haloindonesia');
+  const isJavanese = lowerHost.includes('thejavanesetimes') || lowerHost.includes('javanesetimes');
 
   // Determine requested portal or sitemap type
   let requestedPortal: string | null = null;
@@ -402,6 +405,9 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
       const protocol = reqHost.includes('localhost') ? 'http' : 'https';
       return `${protocol}://${reqHost}`;
     }
+    if (isJavanese) {
+      return 'https://thejavanesetimes.gnn.web.id';
+    }
     if (isHalo) {
       return 'https://haloindonesia.gnn.web.id';
     }
@@ -443,7 +449,7 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
     // Corporate site sitemap only
     const mainBase = reqHost && (reqHost.includes('localhost') || reqHost.includes('127.0.0.1') || reqHost.includes('run.app'))
       ? `http://${reqHost}`
-      : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site');
+      : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site'));
 
     for (const page of ['/', '/about', '/work', '/platform', '/privacy', '/terms']) {
       addUrlEntry(`${mainBase}${page}`, todayStr, page === '/' ? 'daily' : 'weekly', page === '/' ? '1.0' : '0.8');
@@ -491,7 +497,7 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
   } else {
     // Combined / Master Sitemap (All portals & subdomains)
     const isLocalOrPreview = reqHost.includes('localhost') || reqHost.includes('127.0.0.1') || reqHost.includes('run.app');
-    const mainBase = isLocalOrPreview ? `http://${reqHost}` : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site');
+    const mainBase = isLocalOrPreview ? `http://${reqHost}` : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site'));
 
     // Corporate main site pages
     for (const page of ['/', '/about', '/work', '/platform', '/privacy', '/terms']) {
@@ -499,14 +505,16 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
     }
 
     // Process portals
-    const activePortalsForSitemap = isHalo 
-      ? [{ id: 'gnext', name: 'Halo Indonesia News', hostPrefix: 'haloindonesia' }]
-      : ALL_PORTALS_CONFIG;
+    const activePortalsForSitemap = isJavanese
+      ? [{ id: 'gnext', name: 'The Javanese Times', hostPrefix: 'thejavanesetimes' }]
+      : (isHalo 
+        ? [{ id: 'gnext', name: 'Halo Indonesia News', hostPrefix: 'haloindonesia' }]
+        : ALL_PORTALS_CONFIG);
 
     for (const portalConfig of activePortalsForSitemap) {
       const pId = portalConfig.id;
-      const baseUrl = isLocalOrPreview ? mainBase : (isHalo ? 'https://haloindonesia.gnn.web.id' : `https://${portalConfig.hostPrefix}.gnextindonesia.site`);
-      const pubName = isHalo ? 'Halo Indonesia' : portalConfig.name;
+      const baseUrl = isLocalOrPreview ? mainBase : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : `https://${portalConfig.hostPrefix}.gnextindonesia.site`));
+      const pubName = isJavanese ? 'The Javanese Times' : (isHalo ? 'Halo Indonesia' : portalConfig.name);
 
       addUrlEntry(`${baseUrl}/`, todayStr, 'daily', '1.0');
       addUrlEntry(`${baseUrl}/privacy`, todayStr, 'monthly', '0.5');
@@ -556,7 +564,7 @@ app.get('/sitemap-index.xml', (req, res) => {
   const isHalo = host.toLowerCase().includes('haloindonesia');
   const baseUrl = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('run.app')
     ? `${protocol}://${host}`
-    : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site');
+    : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site'));
 
   const xml = generateSitemapIndexXml(baseUrl, host);
   res.header('Content-Type', 'application/xml; charset=utf-8');
@@ -580,14 +588,16 @@ app.get(['/sitemap.xml', '/sitemap-main.xml', '/sitemap-all.xml', '/sitemap-:por
 app.get('/robots.txt', (req, res) => {
   const host = (req.headers.host as string) || 'www.gnextindonesia.site';
   const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
-  const isHalo = host.toLowerCase().includes('haloindonesia');
+  const lowerH = host.toLowerCase();
+  const isHalo = lowerH.includes('haloindonesia');
+  const isJavanese = lowerH.includes('thejavanesetimes') || lowerH.includes('javanesetimes');
   const baseUrl = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('run.app')
     ? `${protocol}://${host}`
-    : (isHalo ? 'https://haloindonesia.gnn.web.id' : `https://${host}`);
+    : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : `https://${host}`));
 
   let sitemapsList = `Sitemap: ${baseUrl}/sitemap.xml\nSitemap: ${baseUrl}/sitemap-index.xml`;
-  if (!isHalo && (host.includes('gnextindonesia.site') || host.includes('localhost'))) {
-    sitemapsList += `\nSitemap: https://news.gnextindonesia.site/sitemap.xml\nSitemap: https://haloindonesia.gnn.web.id/sitemap.xml`;
+  if (!isHalo && !isJavanese && (host.includes('gnextindonesia.site') || host.includes('localhost'))) {
+    sitemapsList += `\nSitemap: https://news.gnextindonesia.site/sitemap.xml\nSitemap: https://haloindonesia.gnn.web.id/sitemap.xml\nSitemap: https://thejavanesetimes.gnn.web.id/sitemap.xml`;
   }
 
   const robots = `User-agent: *
@@ -1103,10 +1113,17 @@ const injectMetaTags = async (reqUrl: string, html: string, host = '') => {
   const baseUrl = `${protocol}://${defaultHost}`;
 
   // Default Portal Branding based on Domain/Host & Path
-  let siteName = 'Gnext Indonesia';
-  let defaultTitle = 'Gnext Indonesia - Creative Studio';
-  let defaultDescription = 'Ruang tumbuh bagi kreator muda untuk mengubah ide menjadi karya, dan karya menjadi kontribusi nyata.';
-  let defaultFavicon = '/favicon.svg';
+  const isJavaneseHost = lowerHost.includes('thejavanesetimes') || lowerHost.includes('javanesetimes');
+  const isHaloHost = lowerHost.includes('haloindonesia');
+
+  let siteName = isJavaneseHost ? 'The Javanese Times' : (isHaloHost ? 'Halo Indonesia' : 'Gnext Indonesia');
+  let defaultTitle = isJavaneseHost 
+    ? 'The Javanese Times - Independent Journalistic Editorial & Truth Across Java'
+    : (isHaloHost ? 'Halo Indonesia - Portal Kabar Baik & Suara Positif Nusantara' : 'Gnext Indonesia - Creative Studio');
+  let defaultDescription = isJavaneseHost
+    ? 'Media jurnalisme independen dan portal berita terpercaya yang menyajikan liputan mendalam, investigasi, analisis sosial-budaya, politik, serta dinamika masyarakat Jawa dan Nusantara.'
+    : (isHaloHost ? 'Portal kabar baik, inspirasi, inovasi, dan suara masyarakat Indonesia secara akurat dan berimbang.' : 'Ruang tumbuh bagi kreator muda untuk mengubah ide menjadi karya, dan karya menjadi kontribusi nyata.');
+  let defaultFavicon = isJavaneseHost ? '/logo-thejavanesetimes.png' : (isHaloHost ? '/Logo Minimalis Halo Indonesia.png' : '/favicon.svg');
   let defaultOgImage = 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?auto=format&fit=crop&w=1200&h=630&q=80';
 
   if (lowerHost.startsWith('lumajangtalks.') || urlPath.startsWith('/lumajangtalks')) {

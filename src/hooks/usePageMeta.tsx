@@ -70,7 +70,7 @@ const getDefaultDescription = (portalId: string, portalName: string): string => 
 
 const getPortalFavicon = (portalId: string, path: string = ''): string => {
   const brand = getBrandConfig();
-  if (brand.id === 'haloindonesia' && !portalId.startsWith('lentera')) {
+  if ((brand.id === 'thejavanesetimes' || brand.id === 'haloindonesia') && !portalId.startsWith('lentera')) {
     return brand.favicon;
   }
   const pLower = path.toLowerCase();

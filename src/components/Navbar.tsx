@@ -670,13 +670,21 @@ export default function Navbar({
   }
 
   // CORPORATE (GNEXT INDONESIA) NAVBAR - Portal Berita points purely to /news
-  const navLinks = [
-    { name: 'About Us', href: '/about' },
-    { name: 'Work', href: '/work' },
-    { name: 'Platform', href: '/platform' },
-    { name: 'Katalog', href: '/katalog' },
-    { name: 'News', href: '/news' },
-  ];
+  const navLinks = brand.isDedicatedNews 
+    ? [
+        { name: 'Kabar Terkini', href: '/' },
+        { name: 'Nasional', href: '/news?category=nasional' },
+        { name: 'Jawa & Daerah', href: '/news?category=daerah' },
+        { name: 'Ekonomi', href: '/news?category=ekonomi' },
+        { name: 'Budaya & Wisata', href: '/news?category=budaya' },
+      ]
+    : [
+        { name: 'About Us', href: '/about' },
+        { name: 'Work', href: '/work' },
+        { name: 'Platform', href: '/platform' },
+        { name: 'Katalog', href: '/katalog' },
+        { name: 'News', href: '/news' },
+      ];
 
   return (
     <header
@@ -691,9 +699,12 @@ export default function Navbar({
           <img 
             src={brand.logo} 
             alt={`${brand.name} Logo`} 
-            className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl object-contain shadow-sm group-hover:scale-105 transition-transform" 
+            className={brand.id === 'thejavanesetimes' 
+              ? "h-8 sm:h-10 w-auto max-w-[180px] sm:max-w-[220px] object-contain group-hover:scale-105 transition-transform"
+              : "w-7 h-7 sm:w-9 sm:h-9 rounded-xl object-contain shadow-sm group-hover:scale-105 transition-transform"
+            }
           />
-          <span>{brand.name}</span>
+          {brand.id !== 'thejavanesetimes' && <span>{brand.name}</span>}
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">

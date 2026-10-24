@@ -26,6 +26,9 @@ function GlobalSEO() {
 
 const getInitialSubdomain = (): string | null => {
   if (typeof window !== 'undefined') {
+    const brand = getBrandConfig();
+    if (brand.isDedicatedNews) return 'news';
+
     const hostname = window.location.hostname.toLowerCase();
     if (hostname.startsWith('studio.')) return 'studio';
     if (hostname.startsWith('news.')) return 'news';
@@ -58,7 +61,7 @@ export default function App() {
     const hostname = window.location.hostname.toLowerCase();
     const pathname = window.location.pathname.toLowerCase();
     
-    if (brand.id === 'haloindonesia' && !hostname.startsWith('lentera') && !pathname.startsWith('/lentera')) {
+    if ((brand.id === 'thejavanesetimes' || brand.id === 'haloindonesia') && !hostname.startsWith('lentera') && !pathname.startsWith('/lentera')) {
       faviconUrl = brand.favicon;
     } else if (hostname.startsWith('studio.') || pathname.startsWith('/studio') || pathname.startsWith('/loginstudio')) {
       faviconUrl = '/favicon.svg';
