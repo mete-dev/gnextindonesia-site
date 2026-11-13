@@ -653,7 +653,8 @@ app.get(['/sitemap.xml', '/sitemap-main.xml', '/sitemap-all.xml', '/sitemap-:por
     const host = (req.headers.host as string) || '';
     const { xml } = await generateSitemapXml(host, req.path);
     res.header('Content-Type', 'application/xml; charset=utf-8');
-    res.header('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+    // Short cache with stale-while-revalidate for fast indexing & fresh news articles
+    res.header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=600');
     res.send(xml);
   } catch (error: any) {
     console.error('Failed to generate dynamic sitemap:', error);
