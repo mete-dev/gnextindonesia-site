@@ -307,24 +307,86 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
 
   const isMain = lowerPath.includes('/sitemap-main.xml');
 
-  // Fetch published articles and categories from Supabase with timeout
+  // Fetch published articles, categories from Supabase, and live articles from Good News Nusantara (GNN) API
   let dbArticles: any[] = [];
   let dbCategories: any[] = [];
-  try {
-    const fetchPromise = Promise.all([
-      supabase.from('articles').select('*').order('date', { ascending: false }),
-      supabase.from('categories').select('*')
-    ]);
-    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Sitemap DB Timeout')), 3000));
-    const [artRes, catRes] = await Promise.race([fetchPromise, timeoutPromise]) as any;
-    if (artRes && artRes.data) dbArticles = artRes.data.filter((a: any) => !a.status || a.status === 'published');
-    if (catRes && catRes.data) dbCategories = catRes.data;
-  } catch (err) {
-    console.error('Sitemap DB fetch error or timeout:', err);
-  }
+  let gnnArticles: any[] = [];
+
+  const fetchSupabase = async () => {
+    try {
+      const fetchPromise = Promise.all([
+        supabase.from('articles').select('*').order('date', { ascending: false }),
+        supabase.from('categories').select('*')
+      ]);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Sitemap DB Timeout')), 3500));
+      const [artRes, catRes] = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      if (artRes && artRes.data) dbArticles = artRes.data.filter((a: any) => !a.status || a.status === 'published');
+      if (catRes && catRes.data) dbCategories = catRes.data;
+    } catch (err) {
+      console.error('Sitemap DB fetch error or timeout:', err);
+    }
+  };
+
+  const fetchGNN = async () => {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch('https://goodnewsnusantara.my.id/api/articles.php?limit=100', {
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
+      });
+      clearTimeout(timer);
+      if (res.ok) {
+        const json = await res.json() as any;
+        if (json && json.status === 'success' && Array.isArray(json.data)) {
+          gnnArticles = json.data;
+        }
+      }
+    } catch (err) {
+      console.warn('Sitemap GNN API fetch error or timeout:', (err as any)?.message || err);
+    }
+  };
+
+  await Promise.all([fetchSupabase(), fetchGNN()]);
 
   const allArticles: any[] = [...dbArticles];
   const existingSlugs = new Set(allArticles.map(a => slugify(a.title)));
+
+  // Integrate GNN articles into allArticles
+  for (const raw of gnnArticles) {
+    if (!raw.title) continue;
+    const rawSlug = raw.slug ? slugify(raw.slug) : slugify(raw.title);
+    if (existingSlugs.has(rawSlug)) continue;
+
+    const catName = raw.category || raw.sub_category || 'Kabar Baik';
+    const catSlug = slugify(catName);
+
+    // Extract image if available (avoid raw data URIs for sitemap image loc if too large)
+    let artImage: string | undefined = undefined;
+    if (raw.cover_image && !raw.cover_image.startsWith('data:')) {
+      artImage = raw.cover_image;
+    } else if (raw.image && !raw.image.startsWith('data:')) {
+      artImage = raw.image;
+    }
+
+    allArticles.push({
+      id: raw.id || `gnn-${rawSlug}`,
+      title: raw.title,
+      slug: rawSlug,
+      category: catName,
+      category_name: catName,
+      categoryId: `gnn-cat-${catSlug}`,
+      category_id: `gnn-cat-${catSlug}`,
+      portal: 'gnext',
+      date: raw.date || raw.created_at || new Date().toISOString().split('T')[0],
+      created_at: raw.created_at || new Date().toISOString(),
+      image: artImage,
+      cover_image: artImage,
+      news_location: raw.location || raw.news_location || 'Nasional',
+      is_gnn: true
+    });
+    existingSlugs.add(rawSlug);
+  }
 
   const fallbackItems = [
     // Gnext News fallbacks
@@ -439,6 +501,12 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
       dbCategories.forEach((c: any) => {
         if (c.slug) set.add(c.slug);
         if (c.name) set.add(slugify(c.name));
+      });
+      // Also register categories discovered from articles (including GNN articles)
+      allArticles.forEach((art: any) => {
+        if (art.category) set.add(slugify(art.category));
+        if (art.category_name) set.add(slugify(art.category_name));
+        if (art.sub_category) set.add(slugify(art.sub_category));
       });
       portalCategoriesMap.set(pId, set);
     }
@@ -562,6 +630,7 @@ app.get('/sitemap-index.xml', (req, res) => {
   const host = (req.headers.host as string) || 'www.gnextindonesia.site';
   const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
   const isHalo = host.toLowerCase().includes('haloindonesia');
+  const isJavanese = host.toLowerCase().includes('thejavanesetimes') || host.toLowerCase().includes('javanesetimes');
   const baseUrl = host.includes('localhost') || host.includes('127.0.0.1') || host.includes('run.app')
     ? `${protocol}://${host}`
     : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site'));
@@ -1236,6 +1305,47 @@ const injectMetaTags = async (reqUrl: string, html: string, host = '') => {
               normTitle === normalizedCandidate
             );
           });
+        }
+
+        // Check Good News Nusantara API if not found yet
+        if (!found) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 2500);
+            const gnnRes = await fetch('https://goodnewsnusantara.my.id/api/articles.php?limit=50', {
+              headers: { 'Accept': 'application/json' },
+              signal: controller.signal
+            });
+            clearTimeout(timer);
+            if (gnnRes.ok) {
+              const gnnJson = await gnnRes.json() as any;
+              if (gnnJson && gnnJson.status === 'success' && Array.isArray(gnnJson.data)) {
+                found = gnnJson.data.find((raw: any) => {
+                  if (!raw.title) return false;
+                  const gSlug = raw.slug ? slugify(raw.slug) : slugify(raw.title);
+                  const normTitle = raw.title.toLowerCase().replace(/[^a-z0-9]/g, '');
+                  return (
+                    gSlug === candidateSlug ||
+                    gSlug === slugify(decodedCandidate) ||
+                    raw.id?.toString() === candidateSlug ||
+                    normTitle === normalizedCandidate ||
+                    (normalizedCandidate.length > 10 && normTitle.includes(normalizedCandidate))
+                  );
+                });
+                if (found) {
+                  // Normalize GNN article structure for meta tag injection
+                  found = {
+                    title: found.title,
+                    excerpt: found.summary || found.content || '',
+                    content: found.content || found.summary || '',
+                    cover_image: found.cover_image || found.image
+                  };
+                }
+              }
+            }
+          } catch (err) {
+            // Silently fall through to generic fallback
+          }
         }
 
         if (found) {
