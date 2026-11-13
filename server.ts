@@ -135,18 +135,22 @@ const getCategorySlug = (categoryId: string, categories: any[] = []) => {
   const found = categories.find((c: any) => c.id === categoryId);
   if (found) return slugify(found.name);
   if (typeof categoryId === 'string') {
-    if (categoryId === 'cat-sosial') return 'sosial';
-    if (categoryId === 'cat-pendidikan') return 'pendidikan';
-    if (categoryId === 'cat-keuangan') return 'keuangan';
-    if (categoryId === 'cat-lingkungan') return 'lingkungan';
-    if (categoryId.includes('wisata')) return 'wisata-budaya';
-    if (categoryId.includes('ekonomi')) return 'ekonomi-bisnis';
-    if (categoryId.includes('kreatif') || categoryId.includes('pemuda')) return 'kreatif-media';
-    if (categoryId === 'cat-teknologi') return 'teknologi';
-    if (categoryId.includes('Marketing')) return 'marketing-strategy';
-    if (categoryId.includes('Content')) return 'content-creation';
-    if (categoryId.includes('Platform')) return 'platform-production';
-    if (categoryId.trim()) return slugify(categoryId);
+    let clean = categoryId;
+    if (clean.startsWith('gnn-cat-')) {
+      clean = clean.replace('gnn-cat-', '');
+    }
+    if (clean === 'cat-sosial' || clean === 'sosial') return 'sosial';
+    if (clean === 'cat-pendidikan' || clean === 'pendidikan') return 'pendidikan';
+    if (clean === 'cat-keuangan' || clean === 'keuangan') return 'keuangan';
+    if (clean === 'cat-lingkungan' || clean === 'lingkungan') return 'lingkungan';
+    if (clean.includes('wisata')) return 'wisata-budaya';
+    if (clean.includes('ekonomi')) return 'ekonomi-bisnis';
+    if (clean.includes('kreatif') || clean.includes('pemuda')) return 'kreatif-media';
+    if (clean === 'cat-teknologi' || clean === 'teknologi') return 'teknologi';
+    if (clean.includes('Marketing')) return 'marketing-strategy';
+    if (clean.includes('Content')) return 'content-creation';
+    if (clean.includes('Platform')) return 'platform-production';
+    if (clean.trim()) return slugify(clean);
   }
   return 'berita';
 };
@@ -199,6 +203,9 @@ const getPublicationName = (portalId: string) => {
 };
 
 const getArticlePortal = (article: any): string => {
+  // If the article is from Good News Nusantara, it belongs primarily to the national/main news portal (gnext)
+  if (article.is_gnn) return 'gnext';
+
   const p = (article.portal || '').toLowerCase();
   if (p === 'gummah' || p === 'ummah') return 'gummah';
   if (p === 'yoikijatim') return 'yoikijatim';
