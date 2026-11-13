@@ -251,9 +251,9 @@ const generateSitemapIndexXml = (baseUrl = 'https://www.gnextindonesia.site', re
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`;
   xml += `<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
 
-  // Main site sitemap
+  // Main site sitemaps
   xml += `  <sitemap>\n`;
-  xml += `    <loc>${baseUrl}/sitemap-main.xml</loc>\n`;
+  xml += `    <loc>${baseUrl}/sitemap.xml</loc>\n`;
   xml += `    <lastmod>${todayStr}</lastmod>\n`;
   xml += `  </sitemap>\n`;
 
@@ -263,17 +263,15 @@ const generateSitemapIndexXml = (baseUrl = 'https://www.gnextindonesia.site', re
     xml += `    <lastmod>${todayStr}</lastmod>\n`;
     xml += `  </sitemap>\n`;
   } else {
-    // Regional portals sitemaps
-    for (const portal of ALL_PORTALS_CONFIG) {
-      let loc = `${baseUrl}/sitemap-${portal.id}.xml`;
-      if (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1') && !baseUrl.includes('run.app')) {
-        loc = `https://${portal.hostPrefix}.gnextindonesia.site/sitemap-${portal.id}.xml`;
-      }
-      xml += `  <sitemap>\n`;
-      xml += `    <loc>${loc}</loc>\n`;
-      xml += `    <lastmod>${todayStr}</lastmod>\n`;
-      xml += `  </sitemap>\n`;
-    }
+    // Other media network portals (Halo Indonesia & The Javanese Times)
+    xml += `  <sitemap>\n`;
+    xml += `    <loc>https://thejavanesetimes.gnn.web.id/sitemap.xml</loc>\n`;
+    xml += `    <lastmod>${todayStr}</lastmod>\n`;
+    xml += `  </sitemap>\n`;
+    xml += `  <sitemap>\n`;
+    xml += `    <loc>https://haloindonesia.gnn.web.id/sitemap.xml</loc>\n`;
+    xml += `    <lastmod>${todayStr}</lastmod>\n`;
+    xml += `  </sitemap>\n`;
   }
 
   xml += `</sitemapindex>`;
@@ -480,9 +478,8 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
     if (isHalo) {
       return 'https://haloindonesia.gnn.web.id';
     }
-    const config = ALL_PORTALS_CONFIG.find(p => p.id === pId);
-    const prefix = config ? config.hostPrefix : pId;
-    return `https://${prefix}.gnextindonesia.site`;
+    // Main domain uses unified paths (/news) without defunct subdomains
+    return 'https://www.gnextindonesia.site';
   };
 
   const defaultCategoriesList = [
@@ -535,7 +532,7 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
     const pubName = getPublicationName(requestedPortal);
 
     // Root and Static pages
-    addUrlEntry(`${baseUrl}/`, todayStr, 'daily', '1.0');
+    addUrlEntry(`${baseUrl}/news`, todayStr, 'daily', '1.0');
     addUrlEntry(`${baseUrl}/privacy`, todayStr, 'monthly', '0.5');
     addUrlEntry(`${baseUrl}/terms`, todayStr, 'monthly', '0.5');
 
@@ -543,7 +540,7 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
     const catSet = getPortalCatSet(requestedPortal);
     catSet.forEach(catSlug => {
       counts.categories++;
-      addUrlEntry(`${baseUrl}/${catSlug}`, todayStr, 'daily', '0.9');
+      addUrlEntry(`${baseUrl}/news/${catSlug}`, todayStr, 'daily', '0.9');
     });
 
     // News Articles for this portal
@@ -559,8 +556,12 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
         const artSlug = slugify(art.title);
         const formattedDate = formatDateForSitemap(art.date || art.created_at);
 
+        const articleUrl = (isJavanese || isHalo)
+          ? `${baseUrl}/${catSlug}/${artSlug}`
+          : `${baseUrl}/news/${catSlug}/${artSlug}`;
+
         addUrlEntry(
-          `${baseUrl}/${catSlug}/${artSlug}`,
+          articleUrl,
           formattedDate,
           'weekly',
           '0.8',
@@ -570,7 +571,7 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
       }
     }
   } else {
-    // Combined / Master Sitemap (All portals & subdomains)
+    // Combined / Master Sitemap
     const isLocalOrPreview = reqHost.includes('localhost') || reqHost.includes('127.0.0.1') || reqHost.includes('run.app');
     const mainBase = isLocalOrPreview ? `http://${reqHost}` : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : 'https://www.gnextindonesia.site'));
 
@@ -579,51 +580,59 @@ const generateSitemapXml = async (reqHost = '', reqPath = '') => {
       addUrlEntry(`${mainBase}${page}`, todayStr, page === '/' ? 'daily' : 'weekly', page === '/' ? '1.0' : '0.8');
     }
 
-    // Process portals
-    const activePortalsForSitemap = isJavanese
-      ? [{ id: 'gnext', name: 'The Javanese Times', hostPrefix: 'thejavanesetimes' }]
-      : (isHalo 
-        ? [{ id: 'gnext', name: 'Halo Indonesia News', hostPrefix: 'haloindonesia' }]
-        : ALL_PORTALS_CONFIG);
+    if (isJavanese || isHalo) {
+      const pubName = isJavanese ? 'The Javanese Times' : 'Halo Indonesia';
+      addUrlEntry(`${mainBase}/`, todayStr, 'daily', '1.0');
+      addUrlEntry(`${mainBase}/privacy`, todayStr, 'monthly', '0.5');
+      addUrlEntry(`${mainBase}/terms`, todayStr, 'monthly', '0.5');
 
-    for (const portalConfig of activePortalsForSitemap) {
-      const pId = portalConfig.id;
-      const baseUrl = isLocalOrPreview ? mainBase : (isJavanese ? 'https://thejavanesetimes.gnn.web.id' : (isHalo ? 'https://haloindonesia.gnn.web.id' : `https://${portalConfig.hostPrefix}.gnextindonesia.site`));
-      const pubName = isJavanese ? 'The Javanese Times' : (isHalo ? 'Halo Indonesia' : portalConfig.name);
-
-      addUrlEntry(`${baseUrl}/`, todayStr, 'daily', '1.0');
-      addUrlEntry(`${baseUrl}/privacy`, todayStr, 'monthly', '0.5');
-      addUrlEntry(`${baseUrl}/terms`, todayStr, 'monthly', '0.5');
-
-      // Categories
-      const catSet = getPortalCatSet(pId);
+      const catSet = getPortalCatSet('gnext');
       catSet.forEach(catSlug => {
         counts.categories++;
-        addUrlEntry(`${baseUrl}/${catSlug}`, todayStr, 'daily', '0.9');
+        addUrlEntry(`${mainBase}/${catSlug}`, todayStr, 'daily', '0.9');
+      });
+
+      for (const art of allArticles) {
+        const catSlug = getCategorySlug(art.category_id || art.categoryId || art.category, dbCategories);
+        const artSlug = slugify(art.title);
+        const formattedDate = formatDateForSitemap(art.date || art.created_at);
+
+        addUrlEntry(
+          `${mainBase}/${catSlug}/${artSlug}`,
+          formattedDate,
+          'weekly',
+          '0.8',
+          { title: art.title, publicationName: pubName, pubDate: formattedDate },
+          art.cover_image || art.image
+        );
+      }
+    } else {
+      // Main site: All news live under https://www.gnextindonesia.site/news/...
+      const pubName = 'GNEXT NEWS';
+      addUrlEntry(`${mainBase}/news`, todayStr, 'daily', '1.0');
+
+      // Categories
+      const catSet = getPortalCatSet('gnext');
+      catSet.forEach(catSlug => {
+        counts.categories++;
+        addUrlEntry(`${mainBase}/news/${catSlug}`, todayStr, 'daily', '0.9');
       });
 
       // Articles
       for (const art of allArticles) {
-        const portal = getArticlePortal(art);
-        if (portal === pId) {
-          if (portal === 'gnext') counts.gnext++;
-          else if (portal === 'yoikijatim') counts.yoikijatim++;
-          else if (portal === 'lumajangtalks') counts.lumajangtalks++;
-          else counts.lentera++;
+        counts.gnext++;
+        const catSlug = getCategorySlug(art.category_id || art.categoryId || art.category, dbCategories);
+        const artSlug = slugify(art.title);
+        const formattedDate = formatDateForSitemap(art.date || art.created_at);
 
-          const catSlug = getCategorySlug(art.category_id || art.categoryId || art.category, dbCategories);
-          const artSlug = slugify(art.title);
-          const formattedDate = formatDateForSitemap(art.date || art.created_at);
-
-          addUrlEntry(
-            `${baseUrl}/${catSlug}/${artSlug}`,
-            formattedDate,
-            'weekly',
-            '0.8',
-            { title: art.title, publicationName: pubName, pubDate: formattedDate },
-            art.cover_image || art.image
-          );
-        }
+        addUrlEntry(
+          `${mainBase}/news/${catSlug}/${artSlug}`,
+          formattedDate,
+          'weekly',
+          '0.8',
+          { title: art.title, publicationName: pubName, pubDate: formattedDate },
+          art.cover_image || art.image
+        );
       }
     }
   }
@@ -674,7 +683,7 @@ app.get('/robots.txt', (req, res) => {
 
   let sitemapsList = `Sitemap: ${baseUrl}/sitemap.xml\nSitemap: ${baseUrl}/sitemap-index.xml`;
   if (!isHalo && !isJavanese && (host.includes('gnextindonesia.site') || host.includes('localhost'))) {
-    sitemapsList += `\nSitemap: https://news.gnextindonesia.site/sitemap.xml\nSitemap: https://haloindonesia.gnn.web.id/sitemap.xml\nSitemap: https://thejavanesetimes.gnn.web.id/sitemap.xml`;
+    sitemapsList += `\nSitemap: https://haloindonesia.gnn.web.id/sitemap.xml\nSitemap: https://thejavanesetimes.gnn.web.id/sitemap.xml`;
   }
 
   const robots = `User-agent: *
@@ -1558,26 +1567,7 @@ const getDistPath = () => {
 
 async function startServer() {
   app.use((req, res, next) => {
-    const host = (req.headers.host || '').toLowerCase();
-    const url = req.originalUrl;
-    
-    // Only redirect if accessed from main corporate domain or www
-    const isMainDomain = host === 'gnextindonesia.site' || host === 'www.gnextindonesia.site' || host.startsWith('www.');
-    
-    if (isMainDomain) {
-      if (url.startsWith('/news')) {
-        const newUrl = url.replace(/^\/news/, '');
-        return res.redirect(301, `https://news.gnextindonesia.site${newUrl || '/'}`);
-      }
-      if (url.startsWith('/yoikijatim')) {
-        const newUrl = url.replace(/^\/yoikijatim/, '');
-        return res.redirect(301, `https://yoikijatim.gnextindonesia.site${newUrl || '/'}`);
-      }
-      if (url.startsWith('/lumajangtalks')) {
-        const newUrl = url.replace(/^\/lumajangtalks/, '');
-        return res.redirect(301, `https://lumajangtalks.gnextindonesia.site${newUrl || '/'}`);
-      }
-    }
+    // Keep routing inside the same domain without redirecting /news to unavailable subdomains
     next();
   });
 
